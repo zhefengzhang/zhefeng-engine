@@ -66,15 +66,15 @@ static inline T max(const T &x, const T &y) {
 
 // Set kUseNewMixer to true to use the new mixer engine always. Otherwise the
 // original code will be used for stereo sinks, the new mixer for multichannel.
-static const bool kUseNewMixer = false; //NOLINT
+static const bool kUseNewMixer = false;
 
 // Set kUseFloat to true to allow floating input into the mixer engine.
 // If kUseNewMixer is false, this is ignored or may be overridden internally
 // because of downmix/upmix support.
-static const bool kUseFloat = false; //NOLINT
+static const bool kUseFloat = false;
 
 // Set to default copy buffer size in frames for input processing.
-static const size_t kCopyBufferFrameCount = 256; //NOLINT
+static const size_t kCopyBufferFrameCount = 256;
 
 namespace cc {
 
@@ -118,7 +118,7 @@ AudioMixer::AudioMixer(size_t frameCount, uint32_t sampleRate, uint32_t maxNumTr
         t->resampler = nullptr;
         //cjh        t->downmixerBufferProvider = nullptr;
         //        t->mReformatBufferProvider = nullptr;
-        //        t->mTimestretchBufferProvider = nullptr;
+        t->mTimestretchBufferProvider.reset(nullptr);
         t++;
     }
 }
@@ -129,7 +129,7 @@ AudioMixer::~AudioMixer() {
         delete t->resampler;
         //cjh        delete t->downmixerBufferProvider;
         //        delete t->mReformatBufferProvider;
-        //        delete t->mTimestretchBufferProvider;
+        t->mTimestretchBufferProvider.reset(nullptr);
         t++;
     }
     delete[] mState.outputTemp;
@@ -207,7 +207,7 @@ int AudioMixer::getTrackName(audio_channel_mask_t channelMask,
         //cjh        t->mReformatBufferProvider = nullptr;
         //        t->downmixerBufferProvider = nullptr;
         //        t->mPostDownmixReformatBufferProvider = nullptr;
-        //        t->mTimestretchBufferProvider = nullptr;
+        t->mTimestretchBufferProvider = nullptr;
         t->mMixerFormat = AUDIO_FORMAT_PCM_16_BIT;
         t->mFormat = format;
         t->mMixerInFormat = selectMixerInFormat(format);
@@ -397,18 +397,18 @@ void AudioMixer::track_t::reconfigureBufferProviders() {
     //        mReformatBufferProvider->setBufferProvider(bufferProvider);
     //        bufferProvider = mReformatBufferProvider;
     //    }
-    //    if (downmixerBufferProvider) {
-    //        downmixerBufferProvider->setBufferProvider(bufferProvider);
-    //        bufferProvider = downmixerBufferProvider;
-    //    }
+    // if (mDownmixerBufferProvider.get() != nullptr) {
+    //     mDownmixerBufferProvider->setBufferProvider(bufferProvider);
+    //     bufferProvider = mDownmixerBufferProvider.get();
+    // }
     //    if (mPostDownmixReformatBufferProvider) {
     //        mPostDownmixReformatBufferProvider->setBufferProvider(bufferProvider);
     //        bufferProvider = mPostDownmixReformatBufferProvider;
     //    }
-    //    if (mTimestretchBufferProvider) {
-    //        mTimestretchBufferProvider->setBufferProvider(bufferProvider);
-    //        bufferProvider = mTimestretchBufferProvider;
-    //    }
+    if (mTimestretchBufferProvider) {
+        mTimestretchBufferProvider->setBufferProvider(bufferProvider);
+        bufferProvider = mTimestretchBufferProvider.get();
+    }
 }
 
 void AudioMixer::deleteTrackName(int name) {
@@ -429,8 +429,7 @@ void AudioMixer::deleteTrackName(int name) {
     // delete the reformatter
     mState.tracks[name].unprepareForReformat();
     // delete the timestretch provider
-    //cjh    delete track.mTimestretchBufferProvider;
-    //    track.mTimestretchBufferProvider = nullptr;
+    mState.tracks[name].mTimestretchBufferProvider.reset(nullptr);
     mTrackNames &= ~(1 << name);
 }
 
@@ -554,7 +553,7 @@ static inline bool setVolumeRampVariables(float newVolume, int32_t ramp,
     // audio artifacts, so it never reaches the range limit of U4.28.
     // We safely use signed 16 and 32 bit integers here.
     const float scaledVolume = newVolume * AudioMixer::UNITY_GAIN_INT; // not neg, subnormal, nan
-    const int32_t intVolume = (scaledVolume >= static_cast<float>(AudioMixer::UNITY_GAIN_INT)) ? AudioMixer::UNITY_GAIN_INT : static_cast<int32_t>(scaledVolume);
+    const int32_t intVolume = (scaledVolume >= (float)AudioMixer::UNITY_GAIN_INT) ? AudioMixer::UNITY_GAIN_INT : (int32_t)scaledVolume;
 
     // set integer volume ramp
     if (ramp != 0) {
@@ -592,13 +591,13 @@ void AudioMixer::setParameter(int name, int target, int param, void *value) {
     track_t &track = mState.tracks[name];
 
     int valueInt = static_cast<int>(reinterpret_cast<uintptr_t>(value));
-    auto *valueBuf = reinterpret_cast<int32_t *>(value);
+    int32_t *valueBuf = reinterpret_cast<int32_t *>(value);
 
     switch (target) {
         case TRACK:
             switch (param) {
                 case CHANNEL_MASK: {
-                    const auto trackChannelMask =
+                    const audio_channel_mask_t trackChannelMask =
                         static_cast<audio_channel_mask_t>(valueInt);
                     if (setChannelMasks(name, trackChannelMask, track.mMixerChannelMask)) {
                         ALOGV("setParameter(TRACK, CHANNEL_MASK, %x)", trackChannelMask);
@@ -620,7 +619,7 @@ void AudioMixer::setParameter(int name, int target, int param, void *value) {
                     }
                     break;
                 case FORMAT: {
-                    auto format = static_cast<audio_format_t>(valueInt);
+                    audio_format_t format = static_cast<audio_format_t>(valueInt);
                     if (track.mFormat != format) {
                         ALOG_ASSERT(audio_is_linear_pcm(format), "Invalid format %#x", format);
                         track.mFormat = format;
@@ -634,14 +633,14 @@ void AudioMixer::setParameter(int name, int target, int param, void *value) {
                 /* case DOWNMIX_TYPE:
             break          */
                 case MIXER_FORMAT: {
-                    auto format = static_cast<audio_format_t>(valueInt);
+                    audio_format_t format = static_cast<audio_format_t>(valueInt);
                     if (track.mMixerFormat != format) {
                         track.mMixerFormat = format;
                         ALOGV("setParameter(TRACK, MIXER_FORMAT, %#x)", format);
                     }
                 } break;
                 case MIXER_CHANNEL_MASK: {
-                    const auto mixerChannelMask =
+                    const audio_channel_mask_t mixerChannelMask =
                         static_cast<audio_channel_mask_t>(valueInt);
                     if (setChannelMasks(name, track.channelMask, mixerChannelMask)) {
                         ALOGV("setParameter(TRACK, MIXER_CHANNEL_MASK, %#x)", mixerChannelMask);
@@ -657,7 +656,7 @@ void AudioMixer::setParameter(int name, int target, int param, void *value) {
             switch (param) {
                 case SAMPLE_RATE:
                     ALOG_ASSERT(valueInt > 0, "bad sample rate %d", valueInt);
-                    if (track.setResampler(static_cast<uint32_t>(valueInt), mSampleRate)) {
+                    if (track.setResampler(uint32_t(valueInt), mSampleRate)) {
                         ALOGV("setParameter(RESAMPLE, SAMPLE_RATE, %u)",
                               uint32_t(valueInt));
                         invalidateState(1 << name);
@@ -692,7 +691,7 @@ void AudioMixer::setParameter(int name, int target, int param, void *value) {
                     }
                     break;
                 default:
-                    if (static_cast<unsigned>(param) >= VOLUME0 && static_cast<unsigned>(param) < VOLUME0 + MAX_NUM_VOLUMES) {
+                    if ((unsigned)param >= VOLUME0 && (unsigned)param < VOLUME0 + MAX_NUM_VOLUMES) {
                         if (setVolumeRampVariables(*reinterpret_cast<float *>(value),
                                                    target == RAMP_VOLUME ? mState.frameCount : 0,
                                                    &track.volume[param - VOLUME0], &track.prevVolume[param - VOLUME0],
@@ -759,8 +758,8 @@ bool AudioMixer::track_t::setResampler(uint32_t trackSampleRate, uint32_t devSam
                 // REFINE: Remove MONO_HACK. Resampler sees #channels after the downmixer
                 // but if none exists, it is the channel count (1 for mono).
                 const int resamplerChannelCount = false /*downmixerBufferProvider != nullptr*/
-                                                      ? static_cast<int>(mMixerChannelCount)
-                                                      : static_cast<int>(channelCount);
+                                                      ? mMixerChannelCount
+                                                      : channelCount;
                 ALOGVV(
                     "Creating resampler:"
                     " format(%#x) channels(%d) devSampleRate(%u) quality(%d)\n",
@@ -778,25 +777,23 @@ bool AudioMixer::track_t::setResampler(uint32_t trackSampleRate, uint32_t devSam
 }
 
 bool AudioMixer::track_t::setPlaybackRate(const AudioPlaybackRate &playbackRate) {
-    //cjh    if ((mTimestretchBufferProvider == nullptr &&
-    //            fabs(playbackRate.mSpeed - mPlaybackRate.mSpeed) < AUDIO_TIMESTRETCH_SPEED_MIN_DELTA &&
-    //            fabs(playbackRate.mPitch - mPlaybackRate.mPitch) < AUDIO_TIMESTRETCH_PITCH_MIN_DELTA) ||
-    //            isAudioPlaybackRateEqual(playbackRate, mPlaybackRate)) {
-    //        return false;
-    //    }
+    if ((mTimestretchBufferProvider.get() == nullptr &&
+            fabs(playbackRate.mSpeed - mPlaybackRate.mSpeed) < AUDIO_TIMESTRETCH_SPEED_MIN_DELTA &&
+            fabs(playbackRate.mPitch - mPlaybackRate.mPitch) < AUDIO_TIMESTRETCH_PITCH_MIN_DELTA) ||
+            isAudioPlaybackRateEqual(playbackRate, mPlaybackRate)) {
+        return false;
+    }
     mPlaybackRate = playbackRate;
-    //    if (mTimestretchBufferProvider == nullptr) {
-    //        // REFINE: Remove MONO_HACK. Resampler sees #channels after the downmixer
-    //        // but if none exists, it is the channel count (1 for mono).
-    //        const int timestretchChannelCount = downmixerBufferProvider != nullptr
-    //                ? mMixerChannelCount : channelCount;
-    //        mTimestretchBufferProvider = ccnew TimestretchBufferProvider(timestretchChannelCount,
-    //                mMixerInFormat, sampleRate, playbackRate);
-    //        reconfigureBufferProviders();
-    //    } else {
-    //        reinterpret_cast<TimestretchBufferProvider*>(mTimestretchBufferProvider)
-    //                ->setPlaybackRate(playbackRate);
-    //    }
+    if (mTimestretchBufferProvider.get() == nullptr) {
+        // TODO: Remove MONO_HACK. Resampler sees #channels after the downmixer
+        // but if none exists, it is the channel count (1 for mono).
+        mTimestretchBufferProvider.reset(new TimestretchBufferProvider(channelCount,
+                mMixerInFormat, sampleRate, playbackRate));
+        reconfigureBufferProviders();
+    } else {
+        static_cast<TimestretchBufferProvider*>(mTimestretchBufferProvider.get())
+                ->setPlaybackRate(playbackRate);
+    }
     return true;
 }
 
@@ -857,7 +854,7 @@ inline void AudioMixer::track_t::adjustVolumeRamp(bool aux, bool useFloat) {
 
 size_t AudioMixer::getUnreleasedFrames(int name) const {
     name -= TRACK0;
-    if (static_cast<uint32_t>(name) < MAX_NUM_TRACKS) {
+    if (uint32_t(name) < MAX_NUM_TRACKS) {
         return mState.tracks[name].getUnreleasedFrames();
     }
     return 0;
@@ -872,13 +869,13 @@ void AudioMixer::setBufferProvider(int name, AudioBufferProvider *bufferProvider
     }
     //cjh    if (mState.tracks[name].mReformatBufferProvider != nullptr) {
     //        mState.tracks[name].mReformatBufferProvider->reset();
-    //    } else if (mState.tracks[name].downmixerBufferProvider != nullptr) {
-    //        mState.tracks[name].downmixerBufferProvider->reset();
-    //    } else if (mState.tracks[name].mPostDownmixReformatBufferProvider != nullptr) {
-    //        mState.tracks[name].mPostDownmixReformatBufferProvider->reset();
-    //    } else if (mState.tracks[name].mTimestretchBufferProvider != nullptr) {
-    //        mState.tracks[name].mTimestretchBufferProvider->reset();
-    //    }
+    // } else if (mState.tracks[name].mDownmixerBufferProvider != nullptr) {
+        // mState.tracks[name].mDownmixerBufferProvider->reset();
+//    } else if (mState.tracks[name].mPostDownmixReformatBufferProvider != nullptr) {
+//        mState.tracks[name].mPostDownmixReformatBufferProvider->reset();
+    if (mState.tracks[name].mTimestretchBufferProvider != nullptr) {
+        mState.tracks[name].mTimestretchBufferProvider->reset();
+    }
 
     mState.tracks[name].mInputBufferProvider = bufferProvider;
     mState.tracks[name].reconfigureBufferProviders();
@@ -888,7 +885,7 @@ void AudioMixer::process(int64_t pts) {
     mState.hook(&mState, pts);
 }
 
-void AudioMixer::process__validate(state_t *state, int64_t pts) {//NOLINT
+void AudioMixer::process__validate(state_t *state, int64_t pts) {
     ALOGW_IF(!state->needsChanged,
              "in process__validate() but nothing's invalid");
 
@@ -1051,7 +1048,7 @@ void AudioMixer::process__validate(state_t *state, int64_t pts) {//NOLINT
     }
 }
 
-void AudioMixer::track__genericResample(track_t *t, int32_t *out, size_t outFrameCount,//NOLINT
+void AudioMixer::track__genericResample(track_t *t, int32_t *out, size_t outFrameCount,
                                         int32_t *temp, int32_t *aux) {
     ALOGVV("track__genericResample\n");
     t->resampler->setSampleRate(t->sampleRate);
@@ -1084,7 +1081,7 @@ void AudioMixer::track__genericResample(track_t *t, int32_t *out, size_t outFram
     }
 }
 
-void AudioMixer::track__nop(track_t *t __unused, int32_t *out __unused,//NOLINT
+void AudioMixer::track__nop(track_t *t __unused, int32_t *out __unused,
                             size_t outFrameCount __unused, int32_t *temp __unused, int32_t *aux __unused) {
 }
 
@@ -1138,10 +1135,10 @@ void AudioMixer::volumeStereo(track_t *t, int32_t *out, size_t frameCount, int32
     if (CC_UNLIKELY(aux != nullptr)) {
         const int16_t va = t->auxLevel;
         do {
-            auto l = static_cast<int16_t>(*temp++ >> 12);
-            auto r = static_cast<int16_t>(*temp++ >> 12);
+            int16_t l = (int16_t)(*temp++ >> 12);
+            int16_t r = (int16_t)(*temp++ >> 12);
             out[0] = mulAdd(l, vl, out[0]);
-            auto a = static_cast<int16_t>((static_cast<int32_t>(l) + r) >> 1);
+            int16_t a = (int16_t)(((int32_t)l + r) >> 1);
             out[1] = mulAdd(r, vr, out[1]);
             out += 2;
             aux[0] = mulAdd(a, va, aux[0]);
@@ -1149,8 +1146,8 @@ void AudioMixer::volumeStereo(track_t *t, int32_t *out, size_t frameCount, int32
         } while (--frameCount);
     } else {
         do {
-            auto l = static_cast<int16_t>(*temp++ >> 12);
-            auto r = static_cast<int16_t>(*temp++ >> 12);
+            int16_t l = (int16_t)(*temp++ >> 12);
+            int16_t r = (int16_t)(*temp++ >> 12);
             out[0] = mulAdd(l, vl, out[0]);
             out[1] = mulAdd(r, vr, out[1]);
             out += 2;
@@ -1158,10 +1155,10 @@ void AudioMixer::volumeStereo(track_t *t, int32_t *out, size_t frameCount, int32
     }
 }
 
-void AudioMixer::track__16BitsStereo(track_t *t, int32_t *out, size_t frameCount,//NOLINT
+void AudioMixer::track__16BitsStereo(track_t *t, int32_t *out, size_t frameCount,
                                      int32_t *temp __unused, int32_t *aux) {
     ALOGVV("track__16BitsStereo\n");
-    const auto *in = static_cast<const int16_t *>(t->in);
+    const int16_t *in = static_cast<const int16_t *>(t->in);
 
     if (CC_UNLIKELY(aux != nullptr)) {
         int32_t l;
@@ -1179,8 +1176,8 @@ void AudioMixer::track__16BitsStereo(track_t *t, int32_t *out, size_t frameCount
             //        (vl + vlInc*frameCount)/65536.0f, frameCount);
 
             do {
-                l = static_cast<int32_t>(*in++);
-                r = static_cast<int32_t>(*in++);
+                l = (int32_t)*in++;
+                r = (int32_t)*in++;
                 *out++ += (vl >> 16) * l;
                 *out++ += (vr >> 16) * r;
                 *aux++ += (va >> 17) * (l + r);
@@ -1198,10 +1195,10 @@ void AudioMixer::track__16BitsStereo(track_t *t, int32_t *out, size_t frameCount
         // constant gain
         else {
             const uint32_t vrl = t->volumeRL;
-            const auto va = t->auxLevel;
+            const int16_t va = (int16_t)t->auxLevel;
             do {
                 uint32_t rl = *reinterpret_cast<const uint32_t *>(in);
-                auto a = static_cast<int16_t>((static_cast<int32_t>(in[0]) + in[1]) >> 1);
+                int16_t a = (int16_t)(((int32_t)in[0] + in[1]) >> 1);
                 in += 2;
                 out[0] = mulAddRL(1, rl, vrl, out[0]);
                 out[1] = mulAddRL(0, rl, vrl, out[1]);
@@ -1223,8 +1220,8 @@ void AudioMixer::track__16BitsStereo(track_t *t, int32_t *out, size_t frameCount
             //        (vl + vlInc*frameCount)/65536.0f, frameCount);
 
             do {
-                *out++ += (vl >> 16) * static_cast<int32_t>(*in++);
-                *out++ += (vr >> 16) * static_cast<int32_t>(*in++);
+                *out++ += (vl >> 16) * (int32_t)*in++;
+                *out++ += (vr >> 16) * (int32_t)*in++;
                 vl += vlInc;
                 vr += vrInc;
             } while (--frameCount);
@@ -1249,10 +1246,10 @@ void AudioMixer::track__16BitsStereo(track_t *t, int32_t *out, size_t frameCount
     t->in = in;
 }
 
-void AudioMixer::track__16BitsMono(track_t *t, int32_t *out, size_t frameCount,//NOLINT
+void AudioMixer::track__16BitsMono(track_t *t, int32_t *out, size_t frameCount,
                                    int32_t *temp __unused, int32_t *aux) {
     ALOGVV("track__16BitsMono\n");
-    const auto *in = static_cast<int16_t const *>(t->in);
+    const int16_t *in = static_cast<int16_t const *>(t->in);
 
     if (CC_UNLIKELY(aux != nullptr)) {
         // ramp gain
@@ -1287,7 +1284,7 @@ void AudioMixer::track__16BitsMono(track_t *t, int32_t *out, size_t frameCount,/
         else {
             const int16_t vl = t->volume[0];
             const int16_t vr = t->volume[1];
-            const auto va = t->auxLevel;
+            const int16_t va = (int16_t)t->auxLevel;
             do {
                 int16_t l = *in++;
                 out[0] = mulAdd(l, vl, out[0]);
@@ -1337,14 +1334,13 @@ void AudioMixer::track__16BitsMono(track_t *t, int32_t *out, size_t frameCount,/
 }
 
 // no-op case
-void AudioMixer::process__nop(state_t *state, int64_t pts) {//NOLINT
+void AudioMixer::process__nop(state_t *state, int64_t pts) {
     ALOGVV("process__nop\n");
     uint32_t e0 = state->enabledTracks;
     while (e0) {
         // process by group of tracks with same output buffer to
         // avoid multiple memset() on same buffer
-        uint32_t e1 = e0;
-        uint32_t e2 = e0;
+        uint32_t e1 = e0, e2 = e0;
         int i = 31 - __builtin_clz(e1);
         {
             track_t &t1 = state->tracks[i];
@@ -1371,7 +1367,7 @@ void AudioMixer::process__nop(state_t *state, int64_t pts) {//NOLINT
                 while (outFrames) {
                     t3.buffer.frameCount = outFrames;
                     int64_t outputPTS = calculateOutputPTS(
-                        t3, pts, state->frameCount - outFrames);//NOLINT
+                        t3, pts, state->frameCount - outFrames);
                     t3.bufferProvider->getNextBuffer(&t3.buffer, outputPTS);
                     if (t3.buffer.raw == nullptr) break;
                     outFrames -= t3.buffer.frameCount;
@@ -1383,7 +1379,7 @@ void AudioMixer::process__nop(state_t *state, int64_t pts) {//NOLINT
 }
 
 // generic code without resampling
-void AudioMixer::process__genericNoResampling(state_t *state, int64_t pts) {//NOLINT
+void AudioMixer::process__genericNoResampling(state_t *state, int64_t pts) {
     ALOGVV("process__genericNoResampling\n");
     int32_t outTemp[BLOCKSIZE * MAX_NUM_CHANNELS] __attribute__((aligned(32)));
 
@@ -1404,8 +1400,7 @@ void AudioMixer::process__genericNoResampling(state_t *state, int64_t pts) {//NO
     while (e0) {
         // process by group of tracks with same output buffer to
         // optimize cache use
-        uint32_t e1 = e0;
-        uint32_t e2 = e0;
+        uint32_t e1 = e0, e2 = e0;
         int j = 31 - __builtin_clz(e1);
         track_t &t1 = state->tracks[j];
         e2 &= ~(1 << j);
@@ -1456,7 +1451,7 @@ void AudioMixer::process__genericNoResampling(state_t *state, int64_t pts) {//NO
                         t.buffer.frameCount = (state->frameCount - numFrames) -
                                               (BLOCKSIZE - outFrames);
                         int64_t outputPTS = calculateOutputPTS(
-                            t, pts, numFrames + (BLOCKSIZE - outFrames));//NOLINT
+                            t, pts, numFrames + (BLOCKSIZE - outFrames));
                         t.bufferProvider->getNextBuffer(&t.buffer, outputPTS);
                         t.in = t.buffer.raw;
                         if (t.in == nullptr) {
@@ -1472,7 +1467,7 @@ void AudioMixer::process__genericNoResampling(state_t *state, int64_t pts) {//NO
             convertMixerFormat(out, t1.mMixerFormat, outTemp, t1.mMixerInFormat,
                                BLOCKSIZE * t1.mMixerChannelCount);
             // REFINE: fix ugly casting due to choice of out pointer type
-            out = reinterpret_cast<int32_t *>(reinterpret_cast<uint8_t *>(out) + BLOCKSIZE * t1.mMixerChannelCount * audio_bytes_per_sample(t1.mMixerFormat));
+            out = reinterpret_cast<int32_t *>((uint8_t *)out + BLOCKSIZE * t1.mMixerChannelCount * audio_bytes_per_sample(t1.mMixerFormat));
             numFrames += BLOCKSIZE;
         } while (numFrames < state->frameCount);
     }
@@ -1488,7 +1483,7 @@ void AudioMixer::process__genericNoResampling(state_t *state, int64_t pts) {//NO
 }
 
 // generic code with resampling
-void AudioMixer::process__genericResampling(state_t *state, int64_t pts) {//NOLINT
+void AudioMixer::process__genericResampling(state_t *state, int64_t pts) {
     ALOGVV("process__genericResampling\n");
     // this const just means that local variable outTemp doesn't change
     int32_t *const outTemp = state->outputTemp;
@@ -1498,8 +1493,7 @@ void AudioMixer::process__genericResampling(state_t *state, int64_t pts) {//NOLI
     while (e0) {
         // process by group of tracks with same output buffer
         // to optimize cache use
-        uint32_t e1 = e0;
-        uint32_t e2 = e0;
+        uint32_t e1 = e0, e2 = e0;
         int j = 31 - __builtin_clz(e1);
         track_t &t1 = state->tracks[j];
         e2 &= ~(1 << j);
@@ -1557,7 +1551,7 @@ void AudioMixer::process__genericResampling(state_t *state, int64_t pts) {//NOLI
 }
 
 // one track, 16 bits stereo without resampling is the most common case
-void AudioMixer::process__OneTrack16BitsStereoNoResampling(state_t *state,//NOLINT
+void AudioMixer::process__OneTrack16BitsStereoNoResampling(state_t *state,
                                                            int64_t pts) {
     ALOGVV("process__OneTrack16BitsStereoNoResampling\n");
     // This method is only called when state->enabledTracks has exactly
@@ -1571,7 +1565,7 @@ void AudioMixer::process__OneTrack16BitsStereoNoResampling(state_t *state,//NOLI
     AudioBufferProvider::Buffer &b(t.buffer);
 
     int32_t *out = t.mainBuffer;
-    auto *fout = reinterpret_cast<float *>(out);
+    float *fout = reinterpret_cast<float *>(out);
     size_t numFrames = state->frameCount;
 
     const int16_t vl = t.volume[0];
@@ -1585,7 +1579,7 @@ void AudioMixer::process__OneTrack16BitsStereoNoResampling(state_t *state,//NOLI
 
         // in == nullptr can happen if the track was flushed just after having
         // been enabled for mixing.
-        if (in == nullptr || (((uintptr_t)in) & 3)) {//NOLINT
+        if (in == nullptr || (((uintptr_t)in) & 3)) {
             memset(out, 0, numFrames * t.mMixerChannelCount * audio_bytes_per_sample(t.mMixerFormat));
             ALOGE_IF((((uintptr_t)in) & 3),
                      "process__OneTrack16BitsStereoNoResampling: misaligned buffer"
@@ -1665,7 +1659,8 @@ int64_t AudioMixer::calculateOutputPTS(const track_t &t, int64_t basePTS,
 
 // Needs to derive a compile time constant (constexpr).  Could be targeted to go
 // to a MONOVOL mixtype based on MAX_NUM_VOLUMES, but that's an unnecessary complication.
-#define MIXTYPE_MONOVOL(mixtype) (mixtype == MIXTYPE_MULTI ? MIXTYPE_MULTI_MONOVOL : mixtype == MIXTYPE_MULTI_SAVEONLY ? MIXTYPE_MULTI_SAVEONLY_MONOVOL : mixtype)
+#define MIXTYPE_MONOVOL(mixtype) (mixtype == MIXTYPE_MULTI ? MIXTYPE_MULTI_MONOVOL : mixtype == MIXTYPE_MULTI_SAVEONLY ? MIXTYPE_MULTI_SAVEONLY_MONOVOL \
+                                                                                                                       : mixtype)
 
 /* MIXTYPE     (see AudioMixerOps.h MIXTYPE_* enumeration)
  * TO: int32_t (Q4.27) or float
@@ -1793,7 +1788,7 @@ void AudioMixer::volumeMix(TO *out, size_t outFrames,
  * TA: int32_t (Q4.27)
  */
 template <int MIXTYPE, typename TO, typename TI, typename TA>
-void AudioMixer::process_NoResampleOneTrack(state_t *state, int64_t pts) {//NOLINT
+void AudioMixer::process_NoResampleOneTrack(state_t *state, int64_t pts) {
     ALOGVV("process_NoResampleOneTrack\n");
     // CLZ is faster than CTZ on ARM, though really not sure if true after 31 - clz.
     const int i = 31 - __builtin_clz(state->enabledTracks);
@@ -1808,13 +1803,13 @@ void AudioMixer::process_NoResampleOneTrack(state_t *state, int64_t pts) {//NOLI
         AudioBufferProvider::Buffer &b(t->buffer);
         // get input buffer
         b.frameCount = numFrames;
-        const int64_t outputPTS = calculateOutputPTS(*t, pts, state->frameCount - numFrames);//NOLINT
+        const int64_t outputPTS = calculateOutputPTS(*t, pts, state->frameCount - numFrames);
         t->bufferProvider->getNextBuffer(&b, outputPTS);
         const TI *in = reinterpret_cast<TI *>(b.raw);
 
         // in == nullptr can happen if the track was flushed just after having
         // been enabled for mixing.
-        if (in == nullptr || (((uintptr_t)in) & 3)) {//NOLINT
+        if (in == nullptr || (((uintptr_t)in) & 3)) {
             memset(out, 0, numFrames * channels * audio_bytes_per_sample(t->mMixerFormat));
             ALOGE_IF((((uintptr_t)in) & 3),
                      "process_NoResampleOneTrack: bus error: "
@@ -1850,7 +1845,7 @@ void AudioMixer::process_NoResampleOneTrack(state_t *state, int64_t pts) {//NOLI
  * TA: int32_t (Q4.27)
  */
 template <int MIXTYPE, typename TO, typename TI, typename TA>
-void AudioMixer::track__Resample(track_t *t, TO *out, size_t outFrameCount, TO *temp, TA *aux) {//NOLINT
+void AudioMixer::track__Resample(track_t *t, TO *out, size_t outFrameCount, TO *temp, TA *aux) {
     ALOGVV("track__Resample\n");
     t->resampler->setSampleRate(t->sampleRate);
     const bool ramp = t->needsRamp();
@@ -1860,14 +1855,14 @@ void AudioMixer::track__Resample(track_t *t, TO *out, size_t outFrameCount, TO *
 
         t->resampler->setVolume(UNITY_GAIN_FLOAT, UNITY_GAIN_FLOAT);
         memset(temp, 0, outFrameCount * t->mMixerChannelCount * sizeof(TO));
-        t->resampler->resample((int32_t *)temp, outFrameCount, t->bufferProvider);//NOLINT
+        t->resampler->resample((int32_t *)temp, outFrameCount, t->bufferProvider);
 
         volumeMix<MIXTYPE, is_same<TI, float>::value, true>(
             out, outFrameCount, temp, aux, ramp, t);
 
     } else { // constant volume gain
         t->resampler->setVolume(t->mVolume[0], t->mVolume[1]);
-        t->resampler->resample((int32_t *)out, outFrameCount, t->bufferProvider);//NOLINT
+        t->resampler->resample((int32_t *)out, outFrameCount, t->bufferProvider);
     }
 }
 
@@ -1880,7 +1875,7 @@ void AudioMixer::track__Resample(track_t *t, TO *out, size_t outFrameCount, TO *
  * TA: int32_t (Q4.27)
  */
 template <int MIXTYPE, typename TO, typename TI, typename TA>
-void AudioMixer::track__NoResample(track_t *t, TO *out, size_t frameCount,//NOLINT
+void AudioMixer::track__NoResample(track_t *t, TO *out, size_t frameCount,
                                    TO *temp __unused, TA *aux) {
     ALOGVV("track__NoResample\n");
     const TI *in = static_cast<const TI *>(t->in);
@@ -1907,7 +1902,7 @@ void AudioMixer::convertMixerFormat(void *out, audio_format_t mixerOutFormat,
                     memcpy(out, in, sampleCount * sizeof(float)); // MEMCPY. REFINE: optimize out
                     break;
                 case AUDIO_FORMAT_PCM_16_BIT:
-                    memcpy_to_i16_from_float(static_cast<int16_t *>(out), static_cast<float *>(in), sampleCount);
+                    memcpy_to_i16_from_float((int16_t *)out, (float *)in, sampleCount);
                     break;
                 default:
                     LOG_ALWAYS_FATAL("bad mixerOutFormat: %#x", mixerOutFormat);
@@ -1917,11 +1912,11 @@ void AudioMixer::convertMixerFormat(void *out, audio_format_t mixerOutFormat,
         case AUDIO_FORMAT_PCM_16_BIT:
             switch (mixerOutFormat) {
                 case AUDIO_FORMAT_PCM_FLOAT:
-                    memcpy_to_float_from_q4_27(static_cast<float *>(out), static_cast<int32_t *>(in), sampleCount);
+                    memcpy_to_float_from_q4_27((float *)out, (int32_t *)in, sampleCount);
                     break;
                 case AUDIO_FORMAT_PCM_16_BIT:
                     // two int16_t are produced per iteration
-                    ditherAndClamp(static_cast<int32_t *>(out), static_cast<int32_t *>(in), sampleCount >> 1);
+                    ditherAndClamp((int32_t *)out, (int32_t *)in, sampleCount >> 1);
                     break;
                 default:
                     LOG_ALWAYS_FATAL("bad mixerOutFormat: %#x", mixerOutFormat);
@@ -1960,9 +1955,11 @@ AudioMixer::hook_t AudioMixer::getTrackHook(int trackType, uint32_t channelCount
         case TRACKTYPE_RESAMPLE:
             switch (mixerInFormat) {
                 case AUDIO_FORMAT_PCM_FLOAT:
-                    return reinterpret_cast<AudioMixer::hook_t>(track__Resample<MIXTYPE_MULTI, float /*TO*/, float /*TI*/, int32_t /*TA*/>);
+                    return (AudioMixer::hook_t)
+                        track__Resample<MIXTYPE_MULTI, float /*TO*/, float /*TI*/, int32_t /*TA*/>;
                 case AUDIO_FORMAT_PCM_16_BIT:
-                    return static_cast<AudioMixer::hook_t>(track__Resample<MIXTYPE_MULTI, int32_t, int16_t, int32_t>);
+                    return (AudioMixer::hook_t)
+                        track__Resample<MIXTYPE_MULTI, int32_t, int16_t, int32_t>;
                 default:
                     LOG_ALWAYS_FATAL("bad mixerInFormat: %#x", mixerInFormat);
                     break;
@@ -1971,9 +1968,11 @@ AudioMixer::hook_t AudioMixer::getTrackHook(int trackType, uint32_t channelCount
         case TRACKTYPE_NORESAMPLEMONO:
             switch (mixerInFormat) {
                 case AUDIO_FORMAT_PCM_FLOAT:
-                    return reinterpret_cast<AudioMixer::hook_t>(track__NoResample<MIXTYPE_MONOEXPAND, float, float, int32_t>);
+                    return (AudioMixer::hook_t)
+                        track__NoResample<MIXTYPE_MONOEXPAND, float, float, int32_t>;
                 case AUDIO_FORMAT_PCM_16_BIT:
-                    return static_cast<AudioMixer::hook_t>(track__NoResample<MIXTYPE_MONOEXPAND, int32_t, int16_t, int32_t>);
+                    return (AudioMixer::hook_t)
+                        track__NoResample<MIXTYPE_MONOEXPAND, int32_t, int16_t, int32_t>;
                 default:
                     LOG_ALWAYS_FATAL("bad mixerInFormat: %#x", mixerInFormat);
                     break;
@@ -1982,9 +1981,11 @@ AudioMixer::hook_t AudioMixer::getTrackHook(int trackType, uint32_t channelCount
         case TRACKTYPE_NORESAMPLE:
             switch (mixerInFormat) {
                 case AUDIO_FORMAT_PCM_FLOAT:
-                    return reinterpret_cast<AudioMixer::hook_t>(track__NoResample<MIXTYPE_MULTI, float, float, int32_t>);
+                    return (AudioMixer::hook_t)
+                        track__NoResample<MIXTYPE_MULTI, float, float, int32_t>;
                 case AUDIO_FORMAT_PCM_16_BIT:
-                    return static_cast<AudioMixer::hook_t>(track__NoResample<MIXTYPE_MULTI, int32_t, int16_t, int32_t>);
+                    return (AudioMixer::hook_t)
+                        track__NoResample<MIXTYPE_MULTI, int32_t, int16_t, int32_t>;
                 default:
                     LOG_ALWAYS_FATAL("bad mixerInFormat: %#x", mixerInFormat);
                     break;

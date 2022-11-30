@@ -276,12 +276,16 @@ NO_WERROR   cocos/audio/common/utils/primitives.cpp
             cocos/audio/common/utils/private/private.h
             cocos/audio/common/utils/minifloat.cpp
             cocos/audio/common/utils/primitives.cpp
+            cocos/audio/common/sonic/sonic.h
+            cocos/audio/common/sonic/sonic.c
             cocos/audio/common/utils/tinysndfile.cpp
             cocos/audio/common/utils/format.cpp
             cocos/audio/android/AssetFd.cpp
             cocos/audio/android/AssetFd.h
             cocos/audio/android/audio.h
             cocos/audio/android/AudioBufferProvider.h
+            cocos/audio/android/BufferProviders.cpp
+            cocos/audio/android/BufferProviders.h
             cocos/audio/android/AudioDecoder.cpp
             cocos/audio/android/AudioDecoder.h
             cocos/audio/android/AudioDecoderMp3.cpp

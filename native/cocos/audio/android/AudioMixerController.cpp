@@ -132,6 +132,12 @@ void AudioMixerController::initTrack(Track *track, ccstd::vector<Track *> &track
         _mixer->setParameter(name, AudioMixer::VOLUME, AudioMixer::VOLUME1, &rVolume);
 
         track->setVolumeDirty(false);
+
+        float playbackRate = track->getPlaybackRate();
+        ALOGV("Track (name: %d)'s playbackRate is dirty, update playbackRate to : %f", name, playbackRate);
+        _mixer->setParameter(name, AudioMixer::TIMESTRETCH, AudioMixer::PLAYBACK_RATE, &playbackRate);
+
+        track->setPlaybackRateDirty(false);
         track->setInitialized(true);
     }
 }
@@ -194,7 +200,18 @@ void AudioMixerController::mixOneFrame() {
                 _mixer->setParameter(name, AudioMixer::VOLUME, AudioMixer::VOLUME0, &lVolume);
                 _mixer->setParameter(name, AudioMixer::VOLUME, AudioMixer::VOLUME1, &rVolume);
 
+                float playbackRate = track->getPlaybackRate();
+                _mixer->setParameter(name, AudioMixer::TIMESTRETCH, AudioMixer::PLAYBACK_RATE, &playbackRate);
+
                 track->setVolumeDirty(false);
+            }
+
+            if (track->isPlaybackRateDirty())
+            {
+                float playbackRate = track->getPlaybackRate();
+                _mixer->setParameter(name, AudioMixer::TIMESTRETCH, AudioMixer::PLAYBACK_RATE, &playbackRate);
+
+                track->setPlaybackRateDirty(false);
             }
         } else if (state == Track::State::RESUMED) {
             initTrack(track, tracksToRemove);

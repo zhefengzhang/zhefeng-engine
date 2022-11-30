@@ -34,6 +34,8 @@ SE_DECLARE_FUNC(js_audio_AudioEngine_getPlayingAudioCount);
 SE_DECLARE_FUNC(js_audio_AudioEngine_getProfile);
 SE_DECLARE_FUNC(js_audio_AudioEngine_getState);
 SE_DECLARE_FUNC(js_audio_AudioEngine_getVolume);
+SE_DECLARE_FUNC(js_audio_AudioEngine_setPlaybackRate);
+SE_DECLARE_FUNC(js_audio_AudioEngine_getPlaybackRate);
 SE_DECLARE_FUNC(js_audio_AudioEngine_isEnabled);
 SE_DECLARE_FUNC(js_audio_AudioEngine_isLoop);
 SE_DECLARE_FUNC(js_audio_AudioEngine_lazyInit);

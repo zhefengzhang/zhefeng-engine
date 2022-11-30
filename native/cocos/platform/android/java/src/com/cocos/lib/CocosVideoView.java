@@ -25,6 +25,7 @@ import android.content.res.AssetFileDescriptor;
 import android.content.res.Resources;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.media.PlaybackParams;
 import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
@@ -102,7 +103,7 @@ public class CocosVideoView extends SurfaceView {
     protected int mVisibleHeight = 0;
 
     protected boolean mFullScreenEnabled = false;
-
+    protected float mPlaybackRate = 1.0f;
     private boolean mIsAssetResource = false;
     private String mVideoFilePath = null;
 
@@ -154,6 +155,17 @@ public class CocosVideoView extends SurfaceView {
     public void setVolume (float volume) {
         if (mMediaPlayer != null) {
             mMediaPlayer.setVolume(volume, volume);
+        }
+    }
+
+    public void setPlaybackRate (float rate){
+        mPlaybackRate = rate;
+        if (mMediaPlayer != null)
+        {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+            {
+                mMediaPlayer.setPlaybackParams(mMediaPlayer.getPlaybackParams().setSpeed(rate));
+            }
         }
     }
 
@@ -270,7 +282,9 @@ public class CocosVideoView extends SurfaceView {
                 mCurrentState == State.PAUSED ||
                 mCurrentState == State.PLAYBACK_COMPLETED) &&
                 mMediaPlayer != null) {
-
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                mMediaPlayer.setPlaybackParams(mMediaPlayer.getPlaybackParams().setSpeed(mPlaybackRate));
+            }
             mCurrentState = State.STARTED;
             mMediaPlayer.start();
             this.sendEvent(EVENT_PLAYING);
