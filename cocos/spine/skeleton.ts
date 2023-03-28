@@ -44,6 +44,7 @@ import { Batcher2D } from '../2d/renderer/batcher-2d';
 import { RenderEntity, RenderEntityType } from '../2d/renderer/render-entity';
 import { RenderDrawInfo } from '../2d/renderer/render-draw-info';
 import { director } from '../core/director';
+import { SkeletonTexture } from './skeleton-texture';
 
 export const timeScale = 1.0;
 
@@ -1750,6 +1751,49 @@ export class Skeleton extends UIRenderer {
         this._materialCache = {};
     }
 
+    public changeSlotSkin (slotName: string, tex2d: Texture2D) {
+        const slot = this.findSlot(slotName);
+        if (!slot) return;
+        let attachment = slot.getAttachment() as any;
+
+        if (!attachment) return;
+        const isMesh = attachment instanceof spine.MeshAttachment;
+        const isRegion = attachment instanceof spine.RegionAttachment;
+        if (!isMesh && !isRegion) return;
+        attachment = slot.getAttachment().copy();
+        attachment.name = 'xxx';
+
+        const tex2dW = tex2d.width;
+        const tex2dH = tex2d.height;
+        const skelTex = new SkeletonTexture({ width: tex2dW, height: tex2dH } as ImageBitmap);
+        skelTex.setRealTexture(tex2d);
+
+        const region = new spine.TextureAtlasRegion();
+        region.width = tex2dW;
+        region.height = tex2dH;
+        region.originalWidth = tex2dW;
+        region.originalHeight = tex2dH;
+        region.rotate = false;
+        region.u = 0;
+        region.v = 0;
+        region.u2 = 1;
+        region.v2 = 1;
+        region.texture = skelTex;
+        region.renderObject = region;
+        region.page = attachment.region.page;
+
+        attachment.region = region;
+        attachment.width = tex2dW;
+        attachment.height = tex2dH;
+        if (isMesh) {
+            attachment.updateUVs();
+        } else if (isRegion) {
+            attachment.setRegion(region);
+            attachment.updateOffset();
+        }
+        slot.setAttachment(attachment);
+    }
+    
     protected createRenderEntity () {
         const renderEntity = new RenderEntity(RenderEntityType.DYNAMIC);
         renderEntity.setUseLocal(true);
