@@ -6,6 +6,7 @@
 #include "spine-creator-support/spine-cocos2dx.h"
 #include "cocos/bindings/auto/jsb_2d_auto.h"
 #include "cocos/bindings/auto/jsb_assets_auto.h"
+#include "cocos/bindings/auto/jsb_editor_support_auto.h"
 
 #ifndef JSB_ALLOC
 #define JSB_ALLOC(kls, ...) new (std::nothrow) kls(__VA_ARGS__)

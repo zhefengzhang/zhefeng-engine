@@ -821,6 +821,7 @@ const cacheManager = require('./jsb-cache-manager');
         spTex.setRealTextureIndex(textureIdx);
         spTex.setPixelsWide(tex2d.width);
         spTex.setPixelsHigh(tex2d.height);
+        spTex.setRealTexture(tex2d);
         if (this._nativeSkeleton) {
             this._nativeSkeleton.updateRegion(slotName, spTex);
         }
