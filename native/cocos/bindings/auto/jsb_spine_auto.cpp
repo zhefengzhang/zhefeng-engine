@@ -1665,6 +1665,26 @@ static bool js_spine_Attachment_reference(se::State& s) // NOLINT(readability-id
 }
 SE_BIND_FUNC(js_spine_Attachment_reference)
 
+static bool js_spine_Attachment_type(se::State& s) // NOLINT(readability-identifier-naming)
+{
+    auto* cobj = SE_THIS_OBJECT<spine::Attachment>(s);
+    // SE_PRECONDITION2(cobj, false, "Invalid Native Object");
+    if (nullptr == cobj) return true;
+    const auto& args = s.args();
+    size_t argc = args.size();
+    CC_UNUSED bool ok = true;
+    if (argc == 0) {
+        auto result = static_cast<unsigned int>(cobj->type());
+        ok &= nativevalue_to_se(result, s.rval(), nullptr /*ctx*/);
+        SE_PRECONDITION2(ok, false, "Error processing arguments");
+        SE_HOLD_RETURN_VALUE(result, s.thisObject(), s.rval());
+        return true;
+    }
+    SE_REPORT_ERROR("wrong number of arguments: %d, was expecting %d", (int)argc, 0);
+    return false;
+}
+SE_BIND_FUNC(js_spine_Attachment_type)
+
 bool js_register_spine_Attachment(se::Object* obj) // NOLINT(readability-identifier-naming)
 {
     auto* cls = se::Class::create("Attachment", obj, nullptr, nullptr);
@@ -1677,6 +1697,7 @@ bool js_register_spine_Attachment(se::Object* obj) // NOLINT(readability-identif
     cls->defineFunction("getName", _SE(js_spine_Attachment_getName));
     cls->defineFunction("getRefCount", _SE(js_spine_Attachment_getRefCount));
     cls->defineFunction("reference", _SE(js_spine_Attachment_reference));
+    cls->defineFunction("type", _SE(js_spine_Attachment_type));
     cls->install();
     JSBClassType::registerClass<spine::Attachment>(cls);
 
@@ -14559,6 +14580,28 @@ static bool js_spine_SkeletonRenderer_update(se::State& s) // NOLINT(readability
 }
 SE_BIND_FUNC(js_spine_SkeletonRenderer_update)
 
+static bool js_spine_SkeletonRenderer_updateRegion(se::State& s) // NOLINT(readability-identifier-naming)
+{
+    auto* cobj = SE_THIS_OBJECT<spine::SkeletonRenderer>(s);
+    // SE_PRECONDITION2(cobj, false, "Invalid Native Object");
+    if (nullptr == cobj) return true;
+    const auto& args = s.args();
+    size_t argc = args.size();
+    CC_UNUSED bool ok = true;
+    if (argc == 2) {
+        HolderType<std::string, true> arg0 = {};
+        HolderType<cc::middleware::Texture2D*, false> arg1 = {};
+        ok &= sevalue_to_native(args[0], &arg0, s.thisObject());
+        ok &= sevalue_to_native(args[1], &arg1, s.thisObject());
+        SE_PRECONDITION2(ok, false, "Error processing arguments");
+        cobj->updateRegion(arg0.value(), arg1.value());
+        return true;
+    }
+    SE_REPORT_ERROR("wrong number of arguments: %d, was expecting %d", (int)argc, 2);
+    return false;
+}
+SE_BIND_FUNC(js_spine_SkeletonRenderer_updateRegion)
+
 static bool js_spine_SkeletonRenderer_updateWorldTransform(se::State& s) // NOLINT(readability-identifier-naming)
 {
     auto* cobj = SE_THIS_OBJECT<spine::SkeletonRenderer>(s);
@@ -14754,6 +14797,7 @@ bool js_register_spine_SkeletonRenderer(se::Object* obj) // NOLINT(readability-i
     cls->defineFunction("setVertexEffectDelegate", _SE(js_spine_SkeletonRenderer_setVertexEffectDelegate));
     cls->defineFunction("stopSchedule", _SE(js_spine_SkeletonRenderer_stopSchedule));
     cls->defineFunction("update", _SE(js_spine_SkeletonRenderer_update));
+    cls->defineFunction("updateRegion", _SE(js_spine_SkeletonRenderer_updateRegion));
     cls->defineFunction("updateWorldTransform", _SE(js_spine_SkeletonRenderer_updateWorldTransform));
     cls->defineFinalizeFunction(_SE(js_spine_SkeletonRenderer_finalize));
     cls->install();

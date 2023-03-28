@@ -166,6 +166,7 @@ SE_DECLARE_FUNC(js_spine_Attachment_dereference);
 SE_DECLARE_FUNC(js_spine_Attachment_getName);
 SE_DECLARE_FUNC(js_spine_Attachment_getRefCount);
 SE_DECLARE_FUNC(js_spine_Attachment_reference);
+SE_DECLARE_FUNC(js_spine_Attachment_type);
 
 extern se::Object *__jsb_spine_Timeline_proto;   // NOLINT
 extern se::Class *__jsb_spine_Timeline_class;    // NOLINT
@@ -1003,6 +1004,7 @@ SE_DECLARE_FUNC(js_spine_SkeletonRenderer_setUseTint);
 SE_DECLARE_FUNC(js_spine_SkeletonRenderer_setVertexEffectDelegate);
 SE_DECLARE_FUNC(js_spine_SkeletonRenderer_stopSchedule);
 SE_DECLARE_FUNC(js_spine_SkeletonRenderer_update);
+SE_DECLARE_FUNC(js_spine_SkeletonRenderer_updateRegion);
 SE_DECLARE_FUNC(js_spine_SkeletonRenderer_updateWorldTransform);
 SE_DECLARE_FUNC(js_spine_SkeletonRenderer_SkeletonRenderer);
 

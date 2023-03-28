@@ -43,5 +43,6 @@ public:
 
     cc::middleware::Texture2D *_texture = nullptr;
     cc::middleware::Triangles *_triangles = nullptr;
+    AttachmentVertices *       copy();
 };
 } // namespace spine

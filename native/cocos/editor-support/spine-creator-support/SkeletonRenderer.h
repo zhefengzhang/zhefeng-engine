@@ -120,6 +120,7 @@ public:
     void setDebugSlotsEnabled(bool enabled);
     void setDebugMeshEnabled(bool enabled);
     void setAttachEnabled(bool enabled);
+    void updateRegion(const std::string &slotName, cc::middleware::Texture2D *texture);
 
     void setOpacityModifyRGB(bool value);
     bool isOpacityModifyRGB() const;

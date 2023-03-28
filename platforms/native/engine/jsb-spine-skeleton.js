@@ -814,6 +814,18 @@ const cacheManager = require('./jsb-cache-manager');
         }
     };
 
+    skeleton.changeSlotSkin = function (slotName, tex2d) {
+        const spineSkeletonData = cc.internal.SpineSkeletonData.prototype;
+        const textureIdx = spineSkeletonData.recordTexture(tex2d);
+        const spTex = new middleware.Texture2D();
+        spTex.setRealTextureIndex(textureIdx);
+        spTex.setPixelsWide(tex2d.width);
+        spTex.setPixelsHigh(tex2d.height);
+        if (this._nativeSkeleton) {
+            this._nativeSkeleton.updateRegion(slotName, spTex);
+        }
+    };
+	
     //////////////////////////////////////////
     // assembler
     const assembler = cc.internal.SpineAssembler;
