@@ -209,6 +209,9 @@ void AudioMixerController::mixOneFrame() {
             if (track->isPlaybackRateDirty())
             {
                 float playbackRate = track->getPlaybackRate();
+
+                ALOGV("Track (name: %d)'s playbackRate is dirty, update playbackRate to : %f", name, playbackRate);
+                
                 _mixer->setParameter(name, AudioMixer::TIMESTRETCH, AudioMixer::PLAYBACK_RATE, &playbackRate);
 
                 track->setPlaybackRateDirty(false);
