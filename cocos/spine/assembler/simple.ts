@@ -198,6 +198,10 @@ export const simple: IAssembler = {
                 const attachments = skins[i].attachments;
                 for (let j = 0; j < attachments.length; j++) {
                     const entry = attachments[j];
+                    if (null == entry) {
+                        vCount += 4;
+                        iCount += 6;
+                    }
                     for (const key in entry) {
                         const skin = entry[key];
                         if (skin instanceof spine.RegionAttachment) {
