@@ -194,6 +194,21 @@ export const simple: IAssembler = {
             const skins = comp._skeleton!.data.skins;
             let vCount = 0;
             let iCount = 0;
+
+            let slot_vCount = 0;
+            let slot_iCount = 0;
+            let draws = comp._skeleton!.drawOrder;
+            for (let i = 0; i < draws.length; ++i) {
+                const skin = draws[i].attachment;
+                if (skin instanceof spine.RegionAttachment) {
+                    slot_vCount += 4;
+                    slot_iCount += 6;
+                } else if (skin instanceof spine.MeshAttachment) {
+                    slot_vCount += skin.worldVerticesLength >> 1;
+                    slot_iCount += skin.triangles.length;
+                }
+            }
+
             for (let i = 0; i < skins.length; ++i) {
                 const attachments = skins[i].attachments;
                 for (let j = 0; j < attachments.length; j++) {
@@ -214,6 +229,15 @@ export const simple: IAssembler = {
                     }
                 }
             }
+
+            if (slot_vCount > vCount) {
+                vCount = slot_vCount;
+            }
+
+            if (slot_iCount > iCount) {
+                iCount = slot_iCount;
+            }
+
             rd = RenderData.add(useTint ? vfmtPosUvTwoColor4B : vfmtPosUvColor4B, accessor);
             rd.resize(vCount, iCount);
             if (!rd.indices || iCount !== rd.indices.length) {
