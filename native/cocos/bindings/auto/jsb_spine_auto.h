@@ -658,6 +658,7 @@ SE_DECLARE_FUNC(js_spine_RegionAttachment_setWidth);
 SE_DECLARE_FUNC(js_spine_RegionAttachment_setX);
 SE_DECLARE_FUNC(js_spine_RegionAttachment_setY);
 SE_DECLARE_FUNC(js_spine_RegionAttachment_updateOffset);
+SE_DECLARE_FUNC(js_spine_RegionAttachment_RegionAttachment);
 
 extern se::Object *__jsb_spine_RotateTimeline_proto;   // NOLINT
 extern se::Class *__jsb_spine_RotateTimeline_class;    // NOLINT

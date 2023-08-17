@@ -9169,9 +9169,30 @@ static bool js_spine_RegionAttachment_updateOffset(se::State& s) // NOLINT(reada
 }
 SE_BIND_FUNC(js_spine_RegionAttachment_updateOffset)
 
+SE_DECLARE_FINALIZE_FUNC(js_spine_RegionAttachment_finalize)
+
+static bool js_spine_RegionAttachment_constructor(se::State& s) // NOLINT(readability-identifier-naming) constructor.c
+{
+    CC_UNUSED bool ok = true;
+    const auto& args = s.args();
+    spine::String arg0;
+    ok &= sevalue_to_native(args[0], &arg0, s.thisObject());
+    SE_PRECONDITION2(ok, false, "Error processing arguments");
+    auto *ptr = JSB_MAKE_PRIVATE_OBJECT(spine::RegionAttachment, arg0);
+    s.thisObject()->setPrivateObject(ptr);
+    return true;
+}
+SE_BIND_CTOR(js_spine_RegionAttachment_constructor, __jsb_spine_RegionAttachment_class, js_spine_RegionAttachment_finalize)
+
+static bool js_spine_RegionAttachment_finalize(se::State& s) // NOLINT(readability-identifier-naming)
+{
+    return true;
+}
+SE_BIND_FINALIZE_FUNC(js_spine_RegionAttachment_finalize)
+
 bool js_register_spine_RegionAttachment(se::Object* obj) // NOLINT(readability-identifier-naming)
 {
-    auto* cls = se::Class::create("RegionAttachment", obj, __jsb_spine_Attachment_proto, nullptr);
+    auto* cls = se::Class::create("RegionAttachment", obj, __jsb_spine_Attachment_proto, _SE(js_spine_RegionAttachment_constructor));
 
 #if CC_DEBUG
     cls->defineStaticProperty("isJSBClass", _SE(js_spine_getter_return_true), nullptr);
@@ -9210,6 +9231,7 @@ bool js_register_spine_RegionAttachment(se::Object* obj) // NOLINT(readability-i
     cls->defineFunction("setX", _SE(js_spine_RegionAttachment_setX));
     cls->defineFunction("setY", _SE(js_spine_RegionAttachment_setY));
     cls->defineFunction("updateOffset", _SE(js_spine_RegionAttachment_updateOffset));
+    cls->defineFinalizeFunction(_SE(js_spine_RegionAttachment_finalize));
     cls->install();
     JSBClassType::registerClass<spine::RegionAttachment>(cls);
 
