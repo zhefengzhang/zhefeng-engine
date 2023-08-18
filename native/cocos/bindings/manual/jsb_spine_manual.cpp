@@ -214,6 +214,39 @@ static bool js_register_spine_retainSkeletonData(se::State &s) {
 }
 SE_BIND_FUNC(js_register_spine_retainSkeletonData)
 
+static bool js_spine_Skin_getAttachments(se::State &s) // NOLINT(readability-identifier-naming)
+{
+    auto *cobj = SE_THIS_OBJECT<spine::Skin>(s);
+    // SE_PRECONDITION2(cobj, false, "Invalid Native Object");
+    if (nullptr == cobj) return true;
+    const auto &args = s.args();
+    size_t argc = args.size();
+    CC_UNUSED bool ok = true;
+    if (argc == 0) {
+        std::vector<std::map<std::string, spine::Attachment *>> result;
+
+        auto atts = cobj->getAttachments();
+        auto entries = cobj->getAttachments();
+        while (entries.hasNext()) {
+            auto &entry = entries.next();
+            int slotIndex = entry._slotIndex;
+            auto *attachment = cobj->getAttachment(slotIndex, entry._name);
+            if (result.size() <= slotIndex) {
+                result.resize(slotIndex + 1);
+            }
+            result[slotIndex].insert(std::make_pair(entry._name.buffer(), attachment));
+        }
+
+        ok &= nativevalue_to_se(result, s.rval(), nullptr /*ctx*/);
+        SE_PRECONDITION2(ok, false, "Error processing arguments");
+        SE_HOLD_RETURN_VALUE(result, s.thisObject(), s.rval());
+        return true;
+    }
+    SE_REPORT_ERROR("wrong number of arguments: %d, was expecting %d", (int)argc, 0);
+    return false;
+}
+SE_BIND_PROP_GET(js_spine_Skin_getAttachments)
+
 bool register_all_spine_manual(se::Object *obj) {
     // Get the ns
     se::Value nsVal;
@@ -228,6 +261,8 @@ bool register_all_spine_manual(se::Object *obj) {
     ns->defineFunction("initSkeletonData", _SE(js_register_spine_initSkeletonData));
     ns->defineFunction("retainSkeletonData", _SE(js_register_spine_retainSkeletonData));
     ns->defineFunction("disposeSkeletonData", _SE(js_register_spine_disposeSkeletonData));
+
+    __jsb_spine_Skin_proto->defineProperty("attachments", _SE(js_spine_Skin_getAttachments), nullptr);
 
     spine::setSpineObjectDisposeCallback([](void *spineObj) {
         if (!se::NativePtrToObjectMap::isValid()) {
