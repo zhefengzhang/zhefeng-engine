@@ -1081,6 +1081,8 @@ void SkeletonRenderer::updateRegion(const std::string &slotName, cc::middleware:
         } else {
             return;
         }
+
+        getSkeleton()->getSkin()->setAttachment(slot->getData().getIndex(), slot->getData().getAttachmentName(), attachment);
     }
 }
 
