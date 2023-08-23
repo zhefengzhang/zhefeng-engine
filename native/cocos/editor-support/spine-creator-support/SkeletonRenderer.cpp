@@ -1024,6 +1024,7 @@ void SkeletonRenderer::updateRegion(const std::string &slotName, cc::middleware:
     if (_skeleton) {
         auto slot = _skeleton->findSlot(slotName.c_str());
         auto attachment = slot->getAttachment();
+
         if (!attachment) return;
         attachment = attachment->copy();
         slot->setAttachment(attachment);
@@ -1067,11 +1068,16 @@ void SkeletonRenderer::updateRegion(const std::string &slotName, cc::middleware:
             mesh->setRegionRotate(true);
             mesh->setRegionDegrees(0);
             mesh->updateUVs();
-            auto attachmentVertices      = reinterpret_cast<AttachmentVertices *>(mesh->getRendererObject());
-            attachmentVertices           = attachmentVertices->copy();
-            mesh->setRendererObject(attachmentVertices);
-            attachmentVertices->_texture = texture;
+
+            auto *attachmentVertices = new AttachmentVertices(
+                texture,
+                static_cast<int32_t>(mesh->getWorldVerticesLength() >> 1),
+                mesh->getTriangles().buffer(),
+                static_cast<int32_t>(mesh->getTriangles().size())
+            );
             texture->addRef();
+
+            mesh->setRendererObject(attachmentVertices);
 
             V3F_T2F_C4B *vertices = attachmentVertices->_triangles->verts;
             for (size_t i = 0, ii = 0, nn = mesh->getWorldVerticesLength(); ii < nn; ++i, ii += 2) {
