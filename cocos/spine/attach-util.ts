@@ -29,81 +29,75 @@ import spine from './lib/spine-core';
 
 const tempMat4 = new Mat4();
 
+class FrameBoneInfo {
+    a = 0;
+    b = 0;
+    c = 0;
+    d = 0;
+    worldX = 0;
+    worldY = 0;
+}
+
 /**
  * @en Attach node tool
  * @zh 挂点工具类
  * @class sp.AttachUtil
  */
 export class AttachUtil {
-    protected _inited = false;
-    protected _skeleton: spine.Skeleton | null = null;
-    protected _skeletonNode: Node|null = null;
-    protected _skeletonComp: Skeleton|null = null;
+    protected isInitialized = false;
+    protected skeletonBones: spine.Bone[] | FrameBoneInfo[] | undefined;
+    protected socketNodes: Map<number, Node> | undefined;
+    private keysToDelete: number[] = [];
 
     constructor () {
-        this._inited = false;
-        this._skeleton = null;
-        this._skeletonNode = null;
-        this._skeletonComp = null;
+        this.isInitialized = false;
     }
 
     init (skeletonComp: Skeleton) {
-        this._inited = true;
-        this._skeleton = skeletonComp._skeleton;
-        this._skeletonNode = skeletonComp.node;
-        this._skeletonComp = skeletonComp;
+        this.isInitialized = false;
+        if (!skeletonComp || skeletonComp.socketNodes.size === 0) return;
+        const isCached = skeletonComp.isAnimationCached();
+        this.skeletonBones = isCached && skeletonComp._curFrame ? skeletonComp._curFrame.boneInfos : skeletonComp._skeleton.bones;
+        if (!this.skeletonBones || this.skeletonBones.length < 1) return;
+        this.socketNodes = skeletonComp.socketNodes;
+        if (this.socketNodes.size <= 0) return;
+        this.isInitialized = true;
+        this._syncAttachedNode();
     }
 
     reset () {
-        this._inited = false;
-        this._skeleton = null;
-        this._skeletonNode = null;
-        this._skeletonComp = null;
+        this.isInitialized = false;
+        this.skeletonBones = undefined;
+        this.socketNodes = undefined;
+        this.keysToDelete.length = 0;
     }
 
     _syncAttachedNode () {
-        if (!this._inited) return;
-
-        const socketNodes = this._skeletonComp!.socketNodes;
-        if (socketNodes.size === 0) return;
-
-        let boneInfos;
-        const isCached = this._skeletonComp!.isAnimationCached();
-        if (isCached && this._skeletonComp!._curFrame) {
-            boneInfos = this._skeletonComp!._curFrame.boneInfos;
-        } else {
-            boneInfos = this._skeleton!.bones;
-        }
-
-        if (!boneInfos || boneInfos.length < 1) return;
-
-        const matrixHandle = (node: Node, bone: any) => {
-            const tm = tempMat4;
-            tm.m00 = bone.a;
-            tm.m01 = bone.c;
-            tm.m04 = bone.b;
-            tm.m05 = bone.d;
-            tm.m12 = bone.worldX;
-            tm.m13 = bone.worldY;
-            node.matrix = tempMat4;
-        };
-
-        for (const boneIdx of socketNodes.keys()) {
-            const boneNode = socketNodes.get(boneIdx);
-            // Node has been destroy
+        if (!this.isInitialized) return;
+        const socketNodes = this.socketNodes!;
+        for (const [boneIdx, boneNode] of socketNodes) {
             if (!boneNode || !boneNode.isValid) {
-                socketNodes.delete(boneIdx);
+                this.keysToDelete.push(boneIdx);
                 continue;
             }
-            const bone = boneInfos[boneIdx];
-            // Bone has been destroy
-            if (!bone) {
-                boneNode.removeFromParent();
-                boneNode.destroy();
-                socketNodes.delete(boneIdx);
-                continue;
-            }
-            matrixHandle(boneNode, bone);
+            const bone =  this.skeletonBones![boneIdx];
+            if (bone) this.matrixHandle(boneNode, bone);
         }
+        if (this.keysToDelete.length <= 0) return;
+        for (const boneIdx of this.keysToDelete) {
+            socketNodes.delete(boneIdx);
+        }
+        this.keysToDelete.length = 0;
+    }
+
+    matrixHandle (node: Node, bone: any): void {
+        const tm = tempMat4;
+        tm.m00 = bone.a;
+        tm.m01 = bone.c;
+        tm.m04 = bone.b;
+        tm.m05 = bone.d;
+        tm.m12 = bone.worldX;
+        tm.m13 = bone.worldY;
+        node.matrix = tempMat4;
     }
 }

@@ -23,6 +23,15 @@
 */
 
 declare namespace spine {
+
+    class SPVectorFloat {
+        size(): number;
+        resize(newSize: number, defaultValue: number);
+        set(index: number, value: number);
+        get(index: number): number;
+        delete();
+    }
+    
     class Animation {
         name: string;
         timelines: Array<Timeline>;

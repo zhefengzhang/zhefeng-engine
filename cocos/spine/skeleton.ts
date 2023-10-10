@@ -129,6 +129,13 @@ export interface SkeletonDrawData {
     indexCount: number;
 }
 
+export interface TempColor {
+    r: number;
+    g: number;
+    b: number;
+    a: number;
+}
+
 function setEnumAttr (obj, propName, enumDef) {
     CCClass.Attr.setClassAttr(obj, propName, 'type', 'Enum');
     CCClass.Attr.setClassAttr(obj, propName, 'enumList', Enum.getList(enumDef));
@@ -292,6 +299,13 @@ export class Skeleton extends UIRenderer {
     public _debugRenderer: Graphics | null = null;
 
     private _slotTextures: Map<number, Texture2D> | null = null;
+
+    _vLength = 0;
+    _vBuffer: Uint8Array | null = null;
+    _iLength = 0;
+    _iBuffer: Uint8Array | null = null;
+    _model: any;
+    _tempColor: TempColor = { r: 0, g: 0, b: 0, a: 0 };
 
     constructor () {
         super();
@@ -538,7 +552,7 @@ export class Skeleton extends UIRenderer {
         }
         this._sockets = val;
         this._updateSocketBindings();
-        this.syncAttachedNode();
+        this.attachUtil.init(this);
     }
 
     /**
@@ -659,8 +673,25 @@ export class Skeleton extends UIRenderer {
     }
 
     public onDestroy () {
+        this._drawList.destroy();
         this.destroyRenderData();
         this._cleanMaterialCache();
+        this.attachUtil.reset();
+        //@ts-ignore
+        this.attachUtil = null;
+        //@ts-ignore
+        this._textures = null;
+        this._slotTextures?.clear();
+        this._slotTextures = null;
+        this._cachedSockets.clear();
+        //@ts-ignore
+        this._cachedSockets = null;
+        this._socketNodes.clear();
+        //@ts-ignore
+        this._socketNodes = null;
+        SkeletonSystem.getInstance().remove(this);
+        //@ts-ignore
+        this._instance = null;
         if (!JSB) {
             spine.wasmUtil.destroySpineInstance(this._instance);
         }

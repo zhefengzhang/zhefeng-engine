@@ -57,6 +57,8 @@ const _byteStrideTwoColor = getAttributeStride(vfmtPosUvTwoColor4B);
 const DEBUG_TYPE_REGION = 0;
 const DEBUG_TYPE_MESH = 1;
 
+const tempVecPos = new Vec3(0, 0, 0);
+
 function _getSlotMaterial (blendMode: number, comp: Skeleton) {
     let src: BlendFactor;
     let dst: BlendFactor;
@@ -140,6 +142,7 @@ function updateComponentRenderData (comp: Skeleton, batcher: Batcher2D) {
     }
     const rd = comp.renderData!;
     const accessor = _useTint ? _tintAccessor : _accessor;
+    comp.syncAttachedNode();
     if (rd.vertexCount > 0 || rd.indexCount > 0) accessor.getMeshBuffer(rd.chunk.bufferId).setDirty();
 }
 
@@ -149,34 +152,28 @@ function realTimeTraverse (comp: Skeleton) {
     if (!model) return;
     const vc = model.vCount;
     const ic = model.iCount;
+    if (vc < 1 || ic < 1) return;
+
     const rd = comp.renderData!;
 
     if (rd.vertexCount !== vc || rd.indexCount !== ic) {
         rd.resize(vc, ic);
         rd.indices = new Uint16Array(ic);
+        comp._vLength = vc * Float32Array.BYTES_PER_ELEMENT * floatStride;
+        comp._vBuffer = new Uint8Array(rd.chunk.vb.buffer, rd.chunk.vb.byteOffset, Float32Array.BYTES_PER_ELEMENT * rd.chunk.vb.length);
+        comp._iLength = Uint16Array.BYTES_PER_ELEMENT * ic;
+        comp._iBuffer = new Uint8Array(rd.indices.buffer);
     }
-    if (vc < 1 || ic < 1) return;
 
     const vbuf = rd.chunk.vb;
-    const vUint8Buf = new Uint8Array(vbuf.buffer, vbuf.byteOffset, Float32Array.BYTES_PER_ELEMENT * vbuf.length);
-
     const vPtr = model.vPtr;
-    const vLength = vc * Float32Array.BYTES_PER_ELEMENT * floatStride;
-    // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
-    const vData = spine.wasmUtil.wasm.HEAPU8.subarray(vPtr, vPtr + vLength);
-    vUint8Buf.set(vData);
-
     const iPtr = model.iPtr;
     const ibuf = rd.indices!;
-    const iLength = Uint16Array.BYTES_PER_ELEMENT * ic;
-    // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
-    const iData = spine.wasmUtil.wasm.HEAPU8.subarray(iPtr, iPtr + iLength);
-    const iUint8Buf = new Uint8Array(ibuf.buffer);
-    iUint8Buf.set(iData);
+    const HEAPU8 = spine.wasmUtil.wasm.HEAPU8;
+    comp._vBuffer?.set(HEAPU8.subarray(vPtr, vPtr + comp._vLength), 0);
+    comp._iBuffer?.set(HEAPU8.subarray(iPtr, iPtr + comp._iLength), 0);
     const chunkOffset = rd.chunk.vertexOffset;
-    for (let i = 0; i < ic; i++) {
-        ibuf[i] += chunkOffset;
-    }
+    for (let i = 0; i < ic; i++) ibuf[i] += chunkOffset;
 
     const meshes = model.getMeshes();
     const count = meshes.size();
@@ -194,16 +191,14 @@ function realTimeTraverse (comp: Skeleton) {
     if (comp.enableBatch) {
         const worldMat = comp.node.worldMatrix;
         let index = 0;
-        const tempVecPos = new Vec3(0, 0, 0);
         for (let i = 0; i < vc; i++) {
             index = i * floatStride;
             tempVecPos.x = vbuf[index];
             tempVecPos.y = vbuf[index + 1];
-            tempVecPos.z = 0;
             tempVecPos.transformMat4(worldMat);
             vbuf[index] = tempVecPos.x;
             vbuf[index + 1] = tempVecPos.y;
-            vbuf[index + 2] = tempVecPos.z;
+            vbuf[index + 2] = 0;
         }
     }
 
@@ -340,7 +335,6 @@ function cacheTraverse (comp: Skeleton) {
     if (comp.enableBatch) {
         const worldMat = comp.node.worldMatrix;
         let index = 0;
-        const tempVecPos = new Vec3(0, 0, 0);
         for (let i = 0; i < vc; i++) {
             index = i * floatStride;
             tempVecPos.x = vbuf[index];

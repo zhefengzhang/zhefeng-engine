@@ -25,16 +25,46 @@
 import spine from './spine-core.js';
 import { js } from '../../core';
 
+function resizeArray (array, newSize) {
+    if (!array) return new Array(newSize);
+    if (newSize === array.length) return array;
+    if (newSize < array.length) return array.slice(0, newSize);
+    else return new Array(newSize);
+}
+
 function overrideDefineArrayProp (prototype, getPropVector, name) {
+    const _name = `_${name}`;
     Object.defineProperty(prototype, name, {
         get () {
-            const array: any[] = [];
             const vectors = getPropVector.call(this);
             const count = vectors.size();
+            let array = this[_name];
+            array = resizeArray(array, count);
+            //if (array[0]) return array;
+            for (let i = 0; i < count; i++) array[i] = vectors.get(i);
+            this[_name] = array;
+            return array;
+        },
+    });
+}
+
+function overrideDefineArrayArrayProp (prototype: any, getPropVector: any, name: string): void {
+    const _name = `_${name}`;
+    Object.defineProperty(prototype, name, {
+        get (): any[] {
+            const vectors = getPropVector.call(this);
+            const count = vectors.size();
+            let array = this[_name];
+            array = resizeArray(array, count);
             for (let i = 0; i < count; i++) {
-                const objPtr = vectors.get(i);
-                array.push(objPtr);
+                const vectorI = vectors.get(i);
+                const countJ = vectorI.size();
+                let arrayJ: any[] = array[i];
+                arrayJ = resizeArray(arrayJ, countJ);
+                for (let j = 0; j < countJ; j++) arrayJ[j] = vectorI.get(j);
+                array[i] = arrayJ;
             }
+            this[_name] = array;
             // eslint-disable-next-line @typescript-eslint/no-unsafe-return
             return array;
         },
@@ -42,16 +72,15 @@ function overrideDefineArrayProp (prototype, getPropVector, name) {
 }
 
 function overrideDefineArrayFunction (prototype, getPropVector, name) {
+    const _name = `_${name}`;
     Object.defineProperty(prototype, name, {
         value () {
-            const array: any[] = [];
             const vectors = getPropVector.call(this);
             const count = vectors.size();
-            for (let i = 0; i < count; i++) {
-                const objPtr = vectors.get(i);
-                array.push(objPtr);
-            }
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+            let array = this[_name];
+            array = resizeArray(array, count);
+            for (let i = 0; i < count; i++) array[i] = vectors.get(i);
+            this[_name] = array;
             return array;
         },
     });
@@ -408,6 +437,46 @@ function overrideProperty_Event () {
     });
 }
 
+function overrideProperty_VertexAttachment (): void {
+    const prototype = spine.VertexAttachment.prototype as any;
+    const propertyPolyfills = [
+        {
+            proto: prototype,
+            property: 'id',
+            getter: prototype.getId,
+        },
+        {
+            proto: prototype,
+            property: 'worldVerticesLength',
+            getter: prototype.getWorldVerticesLength,
+            setter: prototype.setWorldVerticesLength,
+        },
+        {
+            proto: prototype,
+            property: 'deformAttachment',
+            getter: prototype.getDeformAttachment,
+            setter: prototype.setDeformAttachment,
+        },
+    ];
+    propertyPolyfills.forEach((prop): void => {
+        js.getset(prop.proto, prop.property, prop.getter, prop.setter);
+    });
+    overrideDefineArrayProp(prototype, prototype.getBones, 'bones');
+    overrideDefineArrayProp(prototype, prototype.getVertices, 'vertices');
+    const originComputeWorldVertices = prototype.computeWorldVertices;
+    Object.defineProperty(prototype, 'computeWorldVertices', {
+        value (slot: spine.Slot, start: number, count: number, worldVertices: number[], offset: number, stride: number) {
+            const vectors = new spine.SPVectorFloat();
+            const length = worldVertices.length;
+            vectors.resize(length, 0);
+            for (let i = 0; i < length; i++) vectors.set(i, worldVertices[i]);
+            originComputeWorldVertices.call(this, slot, start, count, vectors, offset, stride);
+            for (let i = 0; i < length; i++) worldVertices[i] = vectors.get(i);
+            vectors.delete();
+        },
+    });
+}
+
 function overrideProperty_EventData () {
     const prototype = spine.EventData.prototype as any;
     const propertyPolyfills = [
@@ -585,6 +654,7 @@ function overrideProperty_RegionAttachment () {
             proto: prototype,
             property: 'x',
             getter: prototype.getX,
+            setter: prototype.setX
         },
         {
             proto: prototype,
@@ -636,19 +706,41 @@ function overrideProperty_RegionAttachment () {
         //     property: 'region',
         //     getter: prototype.getProp_region,
         // },
-        {
-            proto: prototype,
-            property: 'offset',
-            getter: prototype.getOffset,
-        },
-        {
-            proto: prototype,
-            property: 'uvs',
-            getter: prototype.getUVs,
-        },
     ];
-    propertyPolyfills.forEach((prop) => {
-        js.getset(prop.proto, prop.property, prop.getter);
+    propertyPolyfills.forEach((prop): void => {
+        js.getset(prop.proto, prop.property, prop.getter, prop.setter);
+    });
+
+    overrideDefineArrayProp(prototype, prototype.getOffset, 'offset');
+    const getUVs = prototype.getUVs;
+    const setUVs = prototype.setUVs;
+    const _uvs = '_uvs';
+    Object.defineProperty(prototype, 'uvs', {
+        get (): any {
+            const vectors = getUVs.call(this);
+            const count = vectors.size();
+            let array = prototype[_uvs];
+            array = resizeArray(array, count);
+            for (let i = 0; i < count; i++) array[i] = vectors.get(i);
+            prototype[_uvs] = array;
+            return array;
+        },
+        set (value: number[]) {
+            setUVs.call(this, value[0], value[1], value[2], value[3], value[4] === 1);
+        },
+    });
+
+    const originComputeWorldVertices = prototype.computeWorldVertices;
+    Object.defineProperty(prototype, 'computeWorldVertices', {
+        value (bone: spine.Bone, worldVertices: number[], offset: number, stride: number) {
+            const vectors = new spine.SPVectorFloat();
+            const length = worldVertices.length;
+            vectors.resize(length, 0);
+            for (let i = 0; i < length; i++) vectors.set(i, worldVertices[i]);
+            originComputeWorldVertices.call(this, bone, vectors, offset, stride);
+            for (let i = 0; i < length; i++) worldVertices[i] = vectors.get(i);
+            vectors.delete();
+        },
     });
 }
 
@@ -1149,10 +1241,19 @@ function overrideProperty_Skin () {
         value (slotIndex: number, attachments: Array<spine.SkinEntry>) {
             const vectors = originGetAttachmentsForSlot.call(this, slotIndex);
             const count = vectors.size();
-            for (let i = 0; i < count; i++) {
-                const objPtr = vectors.get(i);
-                attachments.push(objPtr);
-            }
+            attachments = resizeArray(attachments, count);
+            for (let i = 0; i < count; i++) attachments[i] = vectors.get(i);
+            vectors.delete();
+        },
+    });
+    const originFindNamesForSlot = prototype.findNamesForSlot;
+    Object.defineProperty(prototype, 'findNamesForSlot', {
+        value (slotIndex: number, names: Array<string>) {
+            const vectors = originFindNamesForSlot.call(this, slotIndex);
+            const count = vectors.size();
+            names = resizeArray(names, count);
+            for (let i = 0; i < count; i++) names[i] = vectors.get(i);
+            vectors.delete();
         },
     });
 }
@@ -1698,6 +1799,7 @@ export function overrideSpineDefine (wasm) {
     overrideProperty_PathAttachment();
     overrideProperty_PointAttachment();
     overrideProperty_RegionAttachment();
+    overrideProperty_VertexAttachment();
     overrideProperty_TextureAtlas();
     overrideProperty_SlotData();
     overrideProperty_IkConstraint();
