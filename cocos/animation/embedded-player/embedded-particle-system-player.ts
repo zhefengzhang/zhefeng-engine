@@ -46,7 +46,7 @@ export class EmbeddedParticleSystemPlayable extends EmbeddedPlayable {
     @serializable
     public path = '';
 
-    public instantiate (root: Node): EmbeddedParticleSystemPlayableState | null {
+    public instantiate (root: Node) {
         const node = root.getChildByPath(this.path);
         if (!node) {
             warn(`Hierarchy path ${this.path} does not exists.`);
@@ -58,12 +58,20 @@ export class EmbeddedParticleSystemPlayable extends EmbeddedPlayable {
             warn(`Particle system is required for embedded particle system player.`);
             return null;
         }
-        const particleSystem = node.getComponent(ParticleSystemConstructor);
-        if (!particleSystem) {
-            warn(`${this.path} does not includes a particle system component.`);
-            return null;
+        const EfkParticleComp = js.getClassByName(`EFKComponent`) as Constructor<any> | undefined;
+        if (EfkParticleComp) {
+            const efkParticleSystem = node.getComponent(EfkParticleComp);
+            return new EmbeddedParticleSystemPlayableState(efkParticleSystem);
+        } else {
+            warn(`${this.path} does not includes a efkParticle system component.`);
+            const particleSystem = node.getComponent(ParticleSystemConstructor);
+            if (!particleSystem) {
+                warn(`${this.path} does not includes a particle system component.`);
+                return null;
+            }
+            return new EmbeddedParticleSystemPlayableState(particleSystem);
         }
-        return new EmbeddedParticleSystemPlayableState(particleSystem);
+        
     }
 }
 
@@ -95,7 +103,12 @@ class EmbeddedParticleSystemPlayableState extends EmbeddedPlayableState {
      * Stops the particle system.
      */
     public stop (): void {
+        if (this._particleSystem.stopEmitting) {
         this._particleSystem.stopEmitting();
+        } else {
+            this._particleSystem.stop();
+        }
+        // this._particleSystem.stopEmitting();
     }
 
     /**
