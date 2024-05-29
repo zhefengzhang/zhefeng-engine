@@ -60,7 +60,7 @@ public:
     void setListener(uint32_t listenerID, uint32_t type);
     void onAnimationStateEvent(TrackEntry *entry, EventType type, Event *event);
     std::vector<SpineDebugShape> &getDebugShapes();
-    void resizeSlotRegion(const std::string &slotName, uint32_t width, uint32_t height, bool createNew = false);
+    void resizeSlotRegion(const std::string &slotName, uint32_t width, uint32_t height, float x, float y, uint32_t texWidth, uint32_t texHeight, bool bRotate, uint32_t textureID, bool createNew = false);
     void setSlotTexture(const std::string &slotName, uint32_t index);
 
 private:

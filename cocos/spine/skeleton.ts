@@ -29,7 +29,7 @@ import { Enum, EnumType, ccenum } from '../core/value-types/enum';
 import { Node } from '../scene-graph';
 import { CCObject, Color, RecyclePool, js } from '../core';
 import { SkeletonData } from './skeleton-data';
-import { Graphics, UIRenderer } from '../2d';
+import { Graphics, SpriteFrame, UIRenderer } from '../2d';
 import { Batcher2D } from '../2d/renderer/batcher-2d';
 import { BlendFactor, BlendOp } from '../gfx';
 import { MaterialInstance } from '../render-scene';
@@ -1763,7 +1763,7 @@ export class Skeleton extends UIRenderer {
      * same attachment will be changed. @zh 是否需要创建新的 attachment，如果值为 false, 所有共享相同 attachment
      * 的组件都将受影响。
      */
-    public setSlotTexture (slotName: string, tex2d: Texture2D, createNew?: boolean): void {
+    public setSlotTexture (slotName: string, tex2d: Texture2D | SpriteFrame, createNew?: boolean): void {
         if (this.isAnimationCached()) {
             error(`Cached mode can't change texture of slot`);
             return;
@@ -1773,19 +1773,36 @@ export class Skeleton extends UIRenderer {
             error(`No slot named:${slotName}`);
             return;
         }
-        const width = tex2d.width;
-        const height = tex2d.height;
-        const createNewAttachment = createNew || false;
-        this._instance.resizeSlotRegion(slotName, width, height, createNewAttachment);
+        var texture: Texture2D = new Texture2D();
+        var texWidth = tex2d.width;
+        var texHeight = tex2d.height;
+        var createNewAttachment = createNew || false;
+        var x = 0;
+        var y = 0;
+        var regionWidth = texWidth;
+        var regionHeight = texHeight;
+        var isRotate = false;
+        if (tex2d instanceof SpriteFrame) {
+            texture = tex2d.texture as Texture2D;
+            const rect = tex2d.rect;
+            x = rect.x;
+            y = rect.y;
+            regionWidth = tex2d.rect.width;
+            regionHeight = tex2d.rect.height;
+            isRotate = tex2d.rotated;
+        } else {
+            texture = tex2d;
+        }
         if (!this._slotTextures) this._slotTextures = new Map<number, Texture2D>();
         let textureID = 0;
         this._slotTextures.forEach((value, key) => {
-            if (value === tex2d) textureID = key;
+            if (value === texture) textureID = key;
         });
         if (textureID === 0) {
             textureID = ++_slotTextureID;
-            this._slotTextures.set(textureID, tex2d);
+            this._slotTextures.set(textureID, texture);
         }
+        this._instance.resizeSlotRegion(slotName, regionWidth, regionHeight, x, y, texWidth, texHeight, isRotate, textureID, createNewAttachment);
         this._instance.setSlotTexture(slotName, textureID);
     }
 }

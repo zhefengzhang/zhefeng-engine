@@ -472,15 +472,28 @@ std::vector<SpineDebugShape> &SpineSkeletonInstance::getDebugShapes() {
     return this->_debugShapes;
 }
 
-void SpineSkeletonInstance::resizeSlotRegion(const std::string &slotName, uint32_t width, uint32_t height, bool createNew) {
+void SpineSkeletonInstance::resizeSlotRegion(const std::string &slotName, uint32_t width, uint32_t height, float x, float y, uint32_t texWidth, uint32_t texHeight, bool bRotate, uint32_t textureID, bool createNew) {
     if (!_skeleton) return;
     auto slot = _skeleton->findSlot(slotName.c_str());
     if (!slot) return;
     auto attachment = slot->getAttachment();
-    if (!attachment) return;
     if (createNew) {
-        attachment = attachment->copy();
+        if (!attachment) {
+            attachment = new spine::RegionAttachment(slotName.c_str());
+        } else {
+            attachment = attachment->copy();
+        }
         slot->setAttachment(attachment);
+    }
+    auto u = x / texWidth;
+    auto v = y / texHeight;
+    auto u2 = (x + width) / texWidth;
+    auto v2 = (y + height) / texHeight;
+    if (bRotate) {
+        u = (x + height) / texWidth;
+        v = (y + width) / texHeight;
+        u2 = x / texWidth;
+        v2 = y / texHeight;
     }
     if (attachment->getRTTI().isExactly(spine::RegionAttachment::rtti)) {
         auto region = static_cast<RegionAttachment *>(attachment);
@@ -490,11 +503,17 @@ void SpineSkeletonInstance::resizeSlotRegion(const std::string &slotName, uint32
         region->setRegionOriginalHeight(height);
         region->setWidth(width);
         region->setHeight(height);
-        region->setUVs(0, 0, 1.0f, 1.0f, false);
+        region->setUVs(u, v, u2, v2, bRotate);
+        region->setRotation(bRotate);
         region->updateOffset();
         auto attachmentVertices = static_cast<AttachmentVertices *>(region->getRendererObject());
         if (createNew) {
-            attachmentVertices = attachmentVertices->copy();
+            if (!attachmentVertices) {
+                static uint16_t quadTriangles[6] = {0, 1, 2, 2, 3, 0};
+                attachmentVertices = new AttachmentVertices(4, quadTriangles, 6, textureID);
+            } else {
+                attachmentVertices = attachmentVertices->copy();
+            }
             region->setRendererObject(attachmentVertices);
         }
         V3F_T2F_C4B *vertices = attachmentVertices->_triangles->verts;
@@ -511,16 +530,21 @@ void SpineSkeletonInstance::resizeSlotRegion(const std::string &slotName, uint32
         mesh->setRegionOriginalHeight(height);
         mesh->setWidth(width);
         mesh->setHeight(height);
-        mesh->setRegionU(0);
-        mesh->setRegionV(0);
-        mesh->setRegionU2(1.0f);
-        mesh->setRegionV2(1.0f);
+        mesh->setRegionU(u);
+        mesh->setRegionV(v);
+        mesh->setRegionU2(u2);
+        mesh->setRegionV2(v2);
         mesh->setRegionRotate(true);
         mesh->setRegionDegrees(0);
         mesh->updateUVs();
         auto attachmentVertices = static_cast<AttachmentVertices *>(mesh->getRendererObject());
         if (createNew) {
-            attachmentVertices = attachmentVertices->copy();
+            if (!attachmentVertices) {
+                attachmentVertices = new AttachmentVertices(
+                    static_cast<int32_t>(mesh->getWorldVerticesLength() >> 1), mesh->getTriangles().buffer(), static_cast<int32_t>(mesh->getTriangles().size()), textureID);
+            } else {
+                attachmentVertices = attachmentVertices->copy();
+            }
             mesh->setRendererObject(attachmentVertices);
         }
         V3F_T2F_C4B *vertices = attachmentVertices->_triangles->verts;

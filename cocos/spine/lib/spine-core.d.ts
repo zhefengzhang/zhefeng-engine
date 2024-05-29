@@ -1180,7 +1180,7 @@ declare namespace spine {
         setListener(id: number, type: number);
         setDebugMode(debug: boolean);
         getDebugShapes();
-        resizeSlotRegion(slotName: string, width: number, height: number, createNew: boolean);
+        resizeSlotRegion(slotName: string, width: number, height: number, x: number, y: number, texWidth: number, texHeight: number, rotate: boolean, textureID: number, createNew: boolean);
         setSlotTexture(slotName: string, index: number);
     }
 
