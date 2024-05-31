@@ -485,6 +485,7 @@ void SpineSkeletonInstance::resizeSlotRegion(const std::string &slotName, uint32
         }
         slot->setAttachment(attachment);
     }
+    if (!attachment) return; 
     auto u = x / texWidth;
     auto v = y / texHeight;
     auto u2 = (x + width) / texWidth;
@@ -516,6 +517,7 @@ void SpineSkeletonInstance::resizeSlotRegion(const std::string &slotName, uint32
             }
             region->setRendererObject(attachmentVertices);
         }
+        if (!attachmentVertices) return;
         V3F_T2F_C4B *vertices = attachmentVertices->_triangles->verts;
         auto UVs = region->getUVs();
         for (int i = 0, ii = 0; i < 4; ++i, ii += 2) {
@@ -547,6 +549,7 @@ void SpineSkeletonInstance::resizeSlotRegion(const std::string &slotName, uint32
             }
             mesh->setRendererObject(attachmentVertices);
         }
+        if (!attachmentVertices) return;
         V3F_T2F_C4B *vertices = attachmentVertices->_triangles->verts;
         auto UVs = mesh->getUVs();
         for (size_t i = 0, ii = 0, nn = mesh->getWorldVerticesLength(); ii < nn; ++i, ii += 2) {
