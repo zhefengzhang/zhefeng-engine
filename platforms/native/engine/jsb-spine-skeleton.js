@@ -22,9 +22,9 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
-const cacheManager = require('./jsb-cache-manager');
+ const cacheManager = require('./jsb-cache-manager');
 
-// @ts-expect-error jsb polyfills
+ // @ts-expect-error jsb polyfills
 (function () {
     if (globalThis.spine === undefined || globalThis.middleware === undefined) return;
     if (cc.internal.SpineSkeletonData === undefined) return;
@@ -830,8 +830,27 @@ const cacheManager = require('./jsb-cache-manager');
             console.error(`No slot named:${slotName}`);
             return;
         }
-        const createNewAttachment = createNew || false;
-        this._nativeSkeleton.setSlotTexture(slotName, tex2d, createNewAttachment);
+        var texture = null;
+        var texWidth = tex2d.width;
+        var texHeight = tex2d.height;
+        var createNewAttachment = createNew || false;
+        var x = 0;
+        var y = 0;
+        var regionWidth = texWidth;
+        var regionHeight = texHeight;
+        var isRotate = false;
+        if (tex2d instanceof cc.SpriteFrame) {
+            texture = tex2d.texture;
+            const rect = tex2d.rect;
+            x = rect.x;
+            y = rect.y;
+            regionWidth = tex2d.rect.width;
+            regionHeight = tex2d.rect.height;
+            isRotate = tex2d.rotated;
+        } else {
+            texture = tex2d;
+        }
+        this._nativeSkeleton.setSlotTexture(slotName, regionWidth, regionHeight, x, y, isRotate, texture, createNewAttachment);
     };
 
     //////////////////////////////////////////
@@ -850,3 +869,4 @@ const cacheManager = require('./jsb-cache-manager');
     assembler.fillBuffers = function (comp, renderer) {
     };
 }());
+ 

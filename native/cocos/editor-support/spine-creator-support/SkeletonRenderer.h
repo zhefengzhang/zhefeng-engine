@@ -151,7 +151,7 @@ public:
     cc::Material *requestMaterial(uint16_t blendSrc, uint16_t blendDst);
     void setMaterial(cc::Material *material);
     void setRenderEntity(cc::RenderEntity *entity);
-    void setSlotTexture(const std::string &slotName, cc::Texture2D *tex2d, bool createAttachment);
+    void setSlotTexture(const std::string &slotName, uint32_t regionWidth, uint32_t regionHeight, float x, float y, bool bRotate, cc::Texture2D *tex2d, bool createAttachment);
 
 protected:
     void setSkeletonData(SkeletonData *skeletonData, bool ownsSkeletonData);
