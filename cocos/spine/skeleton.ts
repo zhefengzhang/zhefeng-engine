@@ -1773,6 +1773,10 @@ export class Skeleton extends UIRenderer {
             error(`No slot named:${slotName}`);
             return;
         }
+        if (!slot.attachment && !createNew) {
+            error(`Slot ${slotName} has no attachment, please set createNew to true`);
+            return;
+        }
         var texture: Texture2D = new Texture2D();
         var texWidth = tex2d.width;
         var texHeight = tex2d.height;
