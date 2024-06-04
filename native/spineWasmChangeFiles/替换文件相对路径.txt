@@ -1,0 +1,2 @@
+找到 CocosCreator 引擎 3.8.1 的安装路径，参考以下路径找到 spine-wasm 文件存放文件夹，然后替换文件（记得备份原版文件） 
+D:\CocosCreator\Creator\3.8.1\resources\resources\3d\engine\native\external\emscripten\spine
