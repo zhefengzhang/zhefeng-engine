@@ -23,7 +23,7 @@
  THE SOFTWARE.
 */
 
-import { DEBUG, EDITOR, NATIVE, PREVIEW, TEST, EDITOR_NOT_IN_PREVIEW } from 'internal:constants';
+import { DEBUG, EDITOR, NATIVE, PREVIEW, TEST, EDITOR_NOT_IN_PREVIEW, DEV, HTML5 } from 'internal:constants';
 import { systemInfo } from 'pal/system-info';
 import { findCanvas, loadJsFile } from 'pal/env';
 import { Pacer } from 'pal/pacer';
@@ -41,6 +41,7 @@ import { bindingMappingInfo } from '../rendering/define';
 import { ICustomJointTextureLayout } from '../3d/skeletal-animation/skeletal-animation-utils';
 import { IPhysicsConfig } from '../physics/framework/physics-config';
 import { effectSettings } from '../core/effect-settings';
+import { ZipLoader } from '../asset/asset-manager/zipLoader';
 /**
  * @zh
  * 游戏配置。
@@ -808,6 +809,32 @@ export class Game extends EventTarget {
                 const scriptPackages = settings.querySettings<string[]>(Settings.Category.SCRIPTING, 'scriptPackages');
                 if (scriptPackages) {
                     return Promise.all(scriptPackages.map((pack): Promise<any> => import(pack)));
+                }
+                return Promise.resolve([]);
+            })
+            .then((): Promise<any[]> => {
+                if (DEV || PREVIEW || !HTML5) {
+                    return Promise.resolve([]);
+                }
+                const remoteBundles = settings.querySettings<[string]>(Settings.Category.ASSETS, 'remoteBundles');
+                const server = settings.querySettings<string>(Settings.Category.ASSETS, 'server');
+                if (server === "" || remoteBundles!.length < 1)
+                {
+                    console.error("remote server url  or remoteBundles is empty, can not load remote zip bundles");
+                    return Promise.resolve([]);
+                }
+                var loaderZips :Promise<void>[] = [];
+                if (!!remoteBundles && remoteBundles.length > 0) {
+                    var builtInBundles = ZipLoader._ins.builtinBundles;
+                    for (let i = 0; i < builtInBundles.length; i++) {
+                        if (remoteBundles.indexOf(builtInBundles[i]) < 0) {
+                            return Promise.resolve(loaderZips);
+                        }
+                    }
+                    loaderZips = builtInBundles.map((bundleName: string)=>{
+                        ZipLoader._ins.loadFinishZips.push(bundleName);
+                        return ZipLoader._ins.loadZip(`${server}remote/${bundleName}`);
+                    });
                 }
                 return Promise.resolve([]);
             })
