@@ -77,9 +77,6 @@ var AudioClip = cc.Class({
                 else {
                     this._audio = value;
                 }
-                if (this._audio) {
-                    this.emit('load');
-                }
             },
             override: true
         },
@@ -126,6 +123,7 @@ var AudioClip = cc.Class({
                 let self = this;
                 cc.assetManager.postLoadNative(this, function (err) {
                     self._loading = false;
+                    if (!!self._audio && !self._audio.loaded) self.emit('load');
                 });
             }
         }
