@@ -404,6 +404,7 @@ var audioEngine = {
         var audio = getAudioFromId(audioID);
         if (audio) {
             // Stop will recycle audio automatically by event callback
+            audio._state = Audio.State.STOPPED;
             audio.stop();
             return true;
         }

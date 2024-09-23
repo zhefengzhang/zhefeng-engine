@@ -118,6 +118,7 @@ Audio.State = {
     };
 
     proto._onLoaded = function () {
+        if (this._state === Audio.State.STOPPED) return;
         this._createElement();
         this._state = Audio.State.INITIALZING;
         this.setVolume(1);
@@ -145,6 +146,7 @@ Audio.State = {
             self._state = Audio.State.PLAYING;
             // TODO: move to audio event listeners
             self._bindEnded();
+            if (!self._element) return;
             let playPromise = self._element.play();
             // dom audio throws an error if pause audio immediately after playing
             if (window.Promise && playPromise instanceof Promise) {
@@ -187,7 +189,7 @@ Audio.State = {
         this._src && this._src._ensureLoaded(function () {
             // pause operation may fire 'ended' event
             self._unbindEnded();
-            self._element.pause();
+            if (self._element) self._element.pause();
             self._state = Audio.State.PAUSED;
         });
     };
@@ -199,7 +201,7 @@ Audio.State = {
         let self = this;
         this._src && this._src._ensureLoaded(function () {
             self._bindEnded();
-            self._element.play();
+            if (self._element) self._element.play();
             self._state = Audio.State.PLAYING;
         });
     };
@@ -207,8 +209,10 @@ Audio.State = {
     proto.stop = function () {
         let self = this;
         this._src && this._src._ensureLoaded(function () {
-            self._element.pause();
-            self._element.currentTime = 0;
+            if (self._element) {
+                self._element.pause();
+                self._element.currentTime = 0;
+            }
             // remove touchPlayList
             for (let i = 0; i < touchPlayList.length; i++) {
                 if (touchPlayList[i].instance === self) {
@@ -225,7 +229,7 @@ Audio.State = {
     proto.setLoop = function (loop) {
         let self = this;
         this._src && this._src._ensureLoaded(function () {
-            self._element.loop = loop;
+            if (self._element) self._element.loop = loop;
         });
     };
     proto.getLoop = function () {
@@ -235,7 +239,7 @@ Audio.State = {
     proto.setVolume = function (num) {
         let self = this;
         this._src && this._src._ensureLoaded(function () {
-            self._element.volume = num;
+            if (self._element) self._element.volume = num;
         });
     };
     proto.getVolume = function () {
@@ -249,7 +253,7 @@ Audio.State = {
             // so we need to change the callback to rebind ended callback after setCurrentTime
             self._unbindEnded();
             self._bindEnded(self._onendedSecond);
-            self._element.currentTime = num;
+            if (self._element) self._element.currentTime = num;
         });
     };
 
