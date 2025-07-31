@@ -33,7 +33,7 @@ import { scene } from '../../render-scene';
 import type { IBatcher } from '../renderer/i-batcher';
 import { LineCap, LineJoin } from '../assembler/graphics/types';
 import { Impl } from '../assembler/graphics/webgl/impl';
-import { Material, RenderingSubMesh } from '../../asset/assets';
+import { Material, RenderingSubMesh, Texture2D } from '../../asset/assets';
 import { Format, PrimitiveMode, Attribute, Device, BufferUsageBit, BufferInfo, MemoryUsageBit, deviceManager } from '../../gfx';
 import { vfmtPosColor, getAttributeStride, getComponentPerVertex } from '../renderer/vertex-format';
 import { NativeUIModelProxy } from '../renderer/native-2d';
@@ -42,6 +42,7 @@ import type { GraphicsAssembler } from '../assembler/graphics/webgl/graphics-ass
 
 const attributes = vfmtPosColor.concat([
     new Attribute('a_dist', Format.R32F),
+    new Attribute('a_line', Format.R32F),
 ]);
 
 const componentPerVertex = getComponentPerVertex(attributes);
@@ -60,6 +61,40 @@ const stride = getAttributeStride(attributes);
 @executionOrder(110)
 @menu('2D/Graphics')
 export class Graphics extends UIRenderer {
+
+    /**
+     * @en
+     * Current line texture.
+     *
+     * @zh
+     * 当前线条纹理。
+     */
+    @editable
+    @type(Texture2D)
+    get lineTexture (): Texture2D | null {
+        return this._lineTexture;
+    }
+
+    set lineTexture (value) {
+        if (value !== this._lineTexture) {
+            this._lineTexture = value;
+            this.updateMaterialLineTexture();
+        }
+    }
+
+    @editable
+    @type(Boolean)
+    get useTextureHeight(): boolean {
+        return this._useTextureHeight;
+    }
+
+    set useTextureHeight(value: boolean) {
+        this._useTextureHeight = value;
+        if (this._lineTexture) {
+            this.lineWidth = this._lineTexture.height;
+        }
+    }
+
     /**
      * @en
      * Current line width.
@@ -208,6 +243,10 @@ export class Graphics extends UIRenderer {
      */
     public model: scene.Model | null = null;
     @serializable
+    protected _lineTexture : Texture2D | null = null;
+    @serializable
+    protected _useTextureHeight : boolean = false;
+    @serializable
     protected _lineWidth = 1;
     @serializable
     protected _strokeColor = Color.BLACK.clone();
@@ -291,7 +330,9 @@ export class Graphics extends UIRenderer {
             this.impl.clear();
             this.impl = null;
         }
-
+        if (this._lineTexture) {
+            this._lineTexture.decRef();
+        }
         super.onDestroy();
     }
 
@@ -611,6 +652,15 @@ export class Graphics extends UIRenderer {
         (this._assembler as GraphicsAssembler).fill(this);
     }
 
+    public updateMaterialLineTexture () {
+        if (this.material && this._lineTexture) {
+            this.material.setProperty('lineTexture', this._lineTexture);
+            if (this.impl && this.impl.lineTexture !== this._lineTexture) {
+                this.impl.lineTexture = this._lineTexture;
+            }
+        }
+    }
+
     private _updateMtlForGraphics (): void {
         let mat;
         if (this._customMaterial) {
@@ -618,6 +668,7 @@ export class Graphics extends UIRenderer {
         } else {
             mat = builtinResMgr.get('ui-graphics-material');
             this.setSharedMaterial(mat as Material, 0);
+            this.updateMaterialLineTexture();
             mat = this.getMaterialInstance(0);
             mat.recompileShaders({ USE_LOCAL: true });
         }

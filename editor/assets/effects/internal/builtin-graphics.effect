@@ -8,15 +8,17 @@ CCEffect %{
       blendState:
         targets:
         - blend: true
-          blendSrc: one
+          blendSrc: src_alpha
           blendDst: one_minus_src_alpha
-          blendSrcAlpha: one
+          blendSrcAlpha: src_alpha
           blendDstAlpha: one_minus_src_alpha
       rasterizerState:
         cullMode: none
       depthStencilState:
         depthTest: false
         depthWrite: false
+      properties:
+        lineTexture: { value: white }
 }%
 
 CCProgram vs %{
@@ -33,12 +35,16 @@ CCProgram vs %{
   in float a_dist;
   out float v_dist;
 
+  in float a_line;
+  out float v_line;
+
   vec4 vert () {
     vec4 pos = vec4(a_position, 1);
     pos = cc_matViewProj * cc_matWorld * pos;
 
     v_color = a_color;
     v_dist = a_dist;
+    v_line = a_line;
 
     return pos;
   }
@@ -48,9 +54,12 @@ CCProgram fs %{
   #pragma extension([GL_OES_standard_derivatives, __VERSION__ < 300])
 
   precision highp float;
+  #include <builtin/internal/embedded-alpha>
 
   in vec4 v_color;
   in float v_dist;
+  in float v_line;
+  uniform sampler2D lineTexture;
 
   vec4 frag () {
     vec4 o = v_color;
@@ -65,9 +74,16 @@ CCProgram fs %{
       float aa = fwidth(v_dist);
     #endif
 
-    float alpha = 1. - smoothstep(-aa, 0., abs(v_dist) - 1.0);
-    o.rgb *= o.a;
-    o *= alpha;
+    if (v_line == 0.0) {
+      float alpha = 1. - smoothstep(-aa, 0., abs(v_dist) - 1.0);
+      o.rgb *= o.a;
+      o *= alpha;
+    } else {
+      vec2 uv0 = vec2(v_line, (v_dist + 1.) / 2.);
+      uv0.x = fract(uv0.x);
+      uv0.y = fract(uv0.y);
+      o *= CCSampleWithAlphaSeparated(lineTexture, uv0);
+    }
 
     return o;
   }

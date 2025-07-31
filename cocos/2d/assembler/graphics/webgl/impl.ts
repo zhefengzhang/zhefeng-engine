@@ -29,6 +29,7 @@ import { RenderData, MeshRenderData } from '../../../renderer/render-data';
 import { RenderDrawInfoType } from '../../../renderer/render-draw-info';
 import { arc, ellipse, roundRect, tesselateBezier } from '../helper';
 import { LineCap, LineJoin, PointFlags } from '../types';
+import { Texture2D } from '../../../../asset/assets';
 
 export class Point extends Vec2 {
     public dx = 0;
@@ -37,6 +38,7 @@ export class Point extends Vec2 {
     public dmy = 0;
     public flags = 0;
     public len = 0;
+    public lineLength = 0;
 
     constructor (x: number, y: number) {
         super(x, y);
@@ -49,6 +51,7 @@ export class Point extends Vec2 {
         this.dmy = 0;
         this.flags = 0;
         this.len = 0;
+        this.lineLength = 0;
     }
 }
 
@@ -82,10 +85,11 @@ export class Impl {
     public lineCap = LineCap.BUTT;
     public strokeColor = Color.BLACK.clone();
     public lineJoin = LineJoin.MITER;
+    public lineTexture: Texture2D | null = null;
     public lineWidth = 0;
+    public lineTotalLength = 0;
 
     public pointsOffset = 0;
-
     private _commandX = 0;
     private _commandY = 0;
     private _points: Point[] = [];
@@ -178,6 +182,9 @@ export class Impl {
         this._curPath = null;
         this.paths.length = 0;
         this._points.length = 0;
+
+        this.lineTexture = null;
+        this.lineTotalLength = 0;
 
         const dataList = this._renderDataList;
         for (let i = 0, l = dataList.length; i < l; i++) {
