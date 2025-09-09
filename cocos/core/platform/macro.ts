@@ -30,6 +30,12 @@ import { legacyCC } from '../global-exports';
 import { settings, SettingsCategory } from '../settings';
 import { Orientation } from '../../../pal/screen-adapter/enum-type';
 
+/**
+ * @en List of supported texture compression formats
+ * @zh 支持的纹理压缩格式列表
+
+ * @readonly
+ */
 const SUPPORT_TEXTURE_FORMATS = ['.astc', '.pkm', '.pvr', '.webp', '.jpg', '.jpeg', '.bmp', '.png'];
 
 const KEY = {
@@ -971,14 +977,24 @@ interface Macro {
 
     /**
      * @en
-     * Boolean that indicates if the canvas contains an alpha channel, default sets to false for better performance.
-     * Though if you want to make your canvas background transparent and show other dom elements at the background,
-     * you can set it to true before [[game.init]].
-     * Web only.
+     * Whether the Canvas background of web platform games supports the alpha channel. The default value is false. 
+     * Enabling it will increase the game's performance overhead.
+     * This value needs to be modified before [[game.init]] executes engine initialization to take effect.
      * @zh
-     * 用于设置 Canvas 背景是否支持 alpha 通道，默认为 false，这样可以有更高的性能表现。
-     * 如果你希望 Canvas 背景是透明的，并显示背后的其他 DOM 元素，你可以在 [[game.init]] 之前将这个值设为 true。
-     * 仅支持 Web
+     * 对 web 平台游戏设置 Canvas 背景是否支持 alpha 通道，默认为 false。
+     * 开启后会增加游戏性能开销。
+     * 需要在 [[game.init]] 执行引擎初始化之前修改此值才能生效。
+     * @example
+     * step1: 设置 Canvas 对象支持 alpha 通道
+     * ```typescript
+     * import { macro } from 'cc';
+     * macro.ENABLE_TRANSPARENT_CANVAS = true;
+     * ```
+     * step2: 设置相机的 clearColor 的 a 通道透明度值为 0
+     * ```typescript
+     * this.testCamera.clearColor = Color.TRANSPARENT;
+     * ```     
+     * step3: 修改构建后 web 包内的 style.css 的 body 标签的 background-color 属性值为 transparent
      * @default false
      */
     ENABLE_TRANSPARENT_CANVAS: boolean;
@@ -992,14 +1008,19 @@ interface Macro {
      * you probably don't want antialias if your game style is pixel art based.
      * Also, it could have great performance impact with some browser / device using software MSAA.
      * You can set it to true before [[game.init]].
-     * Only affect OpenGL ES and WebGL backend
+     * Only affect WebGL and WebGL2 backend
      * @zh
      * 用于设置在创建 GL Context 时是否开启抗锯齿选项，默认值是 false。
      * 将这个选项设置为 true 会让你的游戏画面稍稍平滑一些，比如旋转硬边贴图时的锯齿。是否开启这个选项很大程度上取决于你的游戏和面向的平台。
      * 在大多数拥有 retina 级别屏幕的设备上用户往往无法区分这个选项带来的变化；如果你的游戏选择像素艺术风格，你也多半不会想开启这个选项。
      * 同时，在少部分使用软件级别抗锯齿算法的设备或浏览器上，这个选项会对性能产生比较大的影响。
      * 你可以在 [[game.init]] 之前设置这个值，否则它不会生效。
-     * 仅影响 WebGL 后端
+     * 仅影响 WebGL与 WebGL2 后端
+     * @example
+     * ```typescript
+     * import { macro } from 'cc';
+     * macro.ENABLE_WEBGL_ANTIALIAS = true;
+     * ```
      * @default true
      */
     ENABLE_WEBGL_ANTIALIAS: boolean;
@@ -1007,8 +1028,15 @@ interface Macro {
     /**
      * @en
      * Used to set float output render target, more accurate multiple light sources, fog, and translucent effects, custom pipeline only, the default value is false.
+     * Currently, the support of mobile devices for 4-channel floating-point textures (especially FP32) is still limited and significantly fragmented. High-end and newer mid-range devices have relatively good support, but low-end and older models have very poor support.
      * @zh
      * 用于开启浮点格式的RT输出, 更精确的多光源、雾化和半透明效果, 仅用于自定义管线, 默认值为 false。
+     * 目前移动设备对4通道浮点贴图（尤其是FP32）的支持仍有限，且碎片化明显。高端和较新的中端设备支持较好，但低端和旧款机型支持度很低。
+     * @example
+     * ```typescript
+     * import { macro } from 'cc';
+     * macro.ENABLE_FLOAT_OUTPUT = true;
+     * ```
      * @default false
      */
     ENABLE_FLOAT_OUTPUT: boolean;
@@ -1027,6 +1055,11 @@ interface Macro {
      * 但是在微信小游戏平台的当前版本，Image 对象会缓存解码后的图片数据，它所占用的内存空间很大。
      * 所以我们在微信平台默认开启了这个选项，这样我们就可以在上传 GL 贴图之后立即释放 Image 对象的内存，避免过高的内存占用。
      * 在 3D 引擎中暂时无效。
+     * @example
+     * ```typescript
+     * import { macro } from 'cc';
+     * macro.CLEANUP_IMAGE_CACHE = true;
+     * ```
      * @default false
      */
     CLEANUP_IMAGE_CACHE: boolean;
@@ -1036,15 +1069,29 @@ interface Macro {
      * Whether to enable multi-touch.
      * @zh
      * 是否开启多点触摸
+     * @example
+     * ```typescript
+     * import { macro } from 'cc';
+     * macro.ENABLE_MULTI_TOUCH = true;
+     * ```
      * @default true
      */
     ENABLE_MULTI_TOUCH: boolean;
 
     /**
      * @en
-     * The maximum size of the canvas pool used by Label, please adjust according to the number of label component in the same scene of the project
+     * The maximum number of canvases that the Label component can cache is 20 by default. 
+     * Increasing this number can speed up the creation of labels, but it will increase memory usage.
+     * Reducing this number can lower memory usage, but it will affect the speed of creating new labels.
      * @zh
-     * Label 使用的 canvas pool 的最大大小，请根据项目同场景的 label 数量进行调整
+     * Label 组件最大可以缓存的 canvas 数量，默认为 20 个。
+     * 增加此数量可以提升创建 label 的速度，但是会增加内存占用。
+     * 减少此数量可以降低内存占用，但是会影响创建新 label 的速度。
+     * @example
+     * ```typescript
+     * import { macro } from 'cc';
+     * macro.MAX_LABEL_CANVAS_POOL_SIZE = 10;
+     * ```
      * @default 20
      */
     MAX_LABEL_CANVAS_POOL_SIZE: number;
