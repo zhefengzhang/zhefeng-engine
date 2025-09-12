@@ -99,9 +99,9 @@ export interface IGameConfig {
 
     /**
      * @zh
-     * 设置想要的帧率你的游戏，但真正的FPS取决于你的游戏实现和运行环境。
+     * 设置游戏的帧率上限。若该值大于设备屏幕刷新率，则实际帧率上限等于设备屏幕刷新率。
      * @en
-     * Set the wanted frame rate for your game, but the real fps depends on your game implementation and the running environment.
+     * Set the maximum frame rate of the game. If this value is greater than the device's screen refresh rate, the actual maximum frame rate will be equal to the device's screen refresh rate.
      * @deprecated Since v3.6, Please use ```overrideSettings: { SettingsCategory.SCREEN: { "frameRate": 60 }}``` to set this.
      */
     frameRate?: number;
@@ -212,6 +212,13 @@ export class Game extends EventTarget {
      * @zh 游戏进入前台运行时触发的事件。<br>
      * 请注意，在 WEB 平台，这个事件不一定会 100% 触发，这完全取决于浏览器的回调行为。<br>
      * 在原生平台，它对应的是应用被切换到前台事件。
+     * @example
+     * ```ts
+     * import { game } from 'cc';
+     * game.on(Game.EVENT_SHOW, function () {
+     *
+     * });
+     * ```
      */
     public static readonly EVENT_SHOW: string = 'game_on_show';
 
@@ -220,12 +227,26 @@ export class Game extends EventTarget {
      * This event is only triggered on native iOS/Android platform.
      * @zh 程序在内存不足时触发的事件。<br>
      * 该事件只会在 iOS/Android 平台触发。
+     * @example
+     * ```ts
+     * import { game } from 'cc';
+     * game.on(Game.EVENT_LOW_MEMORY, function () {
+     *
+     * });
+     * ```
      */
     public static readonly EVENT_LOW_MEMORY: string = 'game_on_low_memory';
 
     /**
-     * @en Event triggered after game inited, at this point all engine objects and game scripts are loaded
-     * @zh 游戏启动后的触发事件，此时加载所有的引擎对象和游戏脚本。
+     * @en The triggering event after the game starts, at which point all engine objects, engine-built-in materials and shaders, the main game scene and dependent resources have all been loaded.
+     * @zh 游戏启动后的触发事件，此时所有的引擎对象、引擎内置材质与着色器、游戏主场景与依赖资源都已完成加载。
+     * @example
+     * ```ts
+     * import { game } from 'cc';
+     * game.on(Game.EVENT_GAME_INITED, function () {
+     *
+     * });
+     * ```
      */
     public static readonly EVENT_GAME_INITED = 'game_inited';
 
@@ -236,6 +257,13 @@ export class Game extends EventTarget {
      * @zh 在引擎初始化之后触发的事件，此时您能够使用引擎所有的类。<br>
      * 它在 Cocos Creator v1.x 版本中名字为 EVENT_RENDERER_INITED，在 v2.0 更名为 EVENT_ENGINE_INITED
      * 并在 Cocos Creator v3.0 中将 EVENT_RENDERER_INITED 用作为渲染器初始化的事件。
+     * @example
+     * ```ts
+     * import { game } from 'cc';
+     * game.on(Game.EVENT_ENGINE_INITED, function () {
+     *
+     * });
+     * ```
      */
     public static readonly EVENT_ENGINE_INITED = 'engine_inited';
 
@@ -407,8 +435,15 @@ export class Game extends EventTarget {
     }
 
     /**
-     * @en Expected frame rate of the game.
-     * @zh 游戏的设定帧率。
+     * @zh
+     * 设置游戏的帧率上限。若该值大于设备屏幕刷新率，则实际帧率上限等于设备屏幕刷新率。
+     * @en
+     * Set the maximum frame rate of the game. If this value is greater than the device's screen refresh rate, the actual maximum frame rate will be equal to the device's screen refresh rate.
+     * @example
+     * ```typescript
+     * import { game } from 'cc';
+     * game.frameRate = 30;
+     * ```
      */
     public get frameRate (): string | number {
         return this._frameRate;
