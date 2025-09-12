@@ -1101,29 +1101,36 @@ interface Macro {
      * Boolean that indicates if enable highp precision data in structure with fragment shader.
      * Enable this option will make the variables defined by the HIGHP_VALUE_STRUCT_DEFINE macro in the shader more accurate, such as position.
      * Enable this option can avoid some distorted lighting effects. That depends on whether your game has abnormal lighting effects on this platform.
-     * There will be a slight performance loss if enable this option, but the impact is not significant.
+     * There will be a slight performance loss if enable this option, but the impact is not significant. Most devices support this feature.
      * Only affect WebGL backend
      * @zh
      * 用于设置是否在片元着色器中使用结构体的时候，允许其中的数据使用highp精度
      * 将这个选项设置为 true 会让shader中使用HIGHP_VALUE_STRUCT_DEFINE宏定义的变量精度更高，比如位置信息等，避免出现一些失真的光照效果。是否开启这个选项很大程度上取决于你的游戏在此平台上是否出现了异常的表现。
-     * 开启后会有轻微的性能损失，但影响不大。
+     * 开启后会有轻微的性能损失，但影响不大，大部分设备支持此特性。
      * 仅影响 WebGL 后端
      * @default false
      */
     ENABLE_WEBGL_HIGHP_STRUCT_VALUES: boolean;
 
     /**
-     * @zh Batcher2D 中内存增量的大小（KB）
-     * 这个值决定了当场景中存在的 2d 渲染组件的顶点数量超过当前 batcher2D 中可容纳的顶点数量时，内存扩充的增加量
-     * 这个值越大，共用同一个 meshBuffer 的 2d 渲染组件数量会更多，但每次扩充所占用的内存也会更大
-     * 默认值在标准格式（[[VertexFormat.vfmtPosUvColor]]）下可容纳 4096 个顶点（4096*9*4/1024），你可以增加容量来提升每个批次可容纳的元素数量
-     * @en The MeshBuffer chunk size in Batcher2D (KB)
-     * This value determines the increase in memory expansion,
-     * when the number of vertices of 2d rendering components present in the scene exceeds the number of vertices,
-     * that can be accommodated in the current batcher2D.
-     * The larger this value is, the more 2d rendering components will share the same meshBuffer, but the more memory will be used for each expansion
-     * The default size can contain 4096 standard vertex ([[VertexFormat.vfmtPosUvColor]]) in one buffer,
-     * you can user larger buffer size to increase the elements count per 2d draw batch.
+     * @zh Batcher2D 中每个渲染批次的内存增量（KB）
+     * 增大此值能使参与渲染合批的 2d 渲染组件数量增加，但是每次增加渲染批次的内存增量也会变大。
+     * 这个值决定每个 2D 渲染批次的顶点数量，计算公式为 vCount = Math.floor(macro.BATCHER2D_MEM_INCREMENT * 1024 / 9 * 4);
+     * WebGL2 & WebGPU 等渲染后端的最大顶点数量通常是 2^32 - 1，即 4294967295。
+     * WebGL1 渲染后端的最大顶点数量通常是 2^16 - 1，即 65535。引擎使用拓展 OES_element_index_uint 突破了这个限制，最大顶点数量也可达到 2^32 - 1。
+     * 所以 macro.BATCHER2D_MEM_INCREMENT 的理论最大值为 150994943，但是因为所运行平台的 js 引擎对 Float32Array|Uint16Array 的最大长度有限制，实际最大值往往会小于 2^32 - 1。
+     * 建议最大值不超过 2097152 kb (2GB)，否则会因为 js 引擎的限制而导致 buffer 创建失败。
+     * @en Memory increment (KB) for each rendering batch in Batcher2D
+     * Increasing this value can increase the number of 2D rendering components involved in rendering batching, but each increase in rendering batches will also result in more memory increment.
+     * This value determines the number of vertices in each 2D rendering batch, with the calculation formula: vCount = Math.floor(macro.BATCHER2D_MEM_INCREMENT * 1024 / 9 * 4);
+     * The maximum number of vertices for rendering backends such as WebGL2 & WebGPU is 2^32 - 1 by default, which is 4294967295.
+     * The maximum number of vertices for the WebGL1 rendering backend is 2^16 - 1 by default, which is 65535. The engine uses the extension OES_element_index_uint to break this limit, and in this case, the maximum number of vertices can reach 2^32 - 1.
+     * So macro.BATCHER2D_MEM_The theoretical maximum value of INCREMENT is 150994943, and because the js engine of the running platform has a limit on the maximum length of FloatArray32, the actual maximum value is often less than 2^32 1.
+     * @example
+     * ```typescript
+     * import { macro } from 'cc';
+     * macro.BATCHER2D_MEM_INCREMENT = 4096; //4096 KB
+     * ```
      * @default 144 KB
      */
     BATCHER2D_MEM_INCREMENT: number;
