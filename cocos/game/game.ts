@@ -270,55 +270,117 @@ export class Game extends EventTarget {
     /**
      * @en Event triggered after renderer inited, at this point you will be able to use all gfx renderer feature.<br>
      * @zh 在渲染器初始化之后触发的事件，此事件在 EVENT_ENGINE_INITED 之前触发，此时开始可使用 gfx 渲染框架。
+     * @example
+     * ```ts
+     * import { game } from 'cc';
+     * game.on(Game.EVENT_RENDERER_INITED, function () {
+     *
+     * });
+     * ```
      */
     public static readonly EVENT_RENDERER_INITED: string = 'renderer_inited';
 
     /**
      * @en Event triggered pre base module initialization, at this point you can not use pal/logging/sys/settings API.
-     * @zh 基础模块初始化之前的事件，在这个事件点你无法使用 pal/logging/sys/settings 的相关接口。
+     * @zh 基础模块初始化之前的事件，在这个时间点你无法使用 pal/logging/sys/settings 的相关接口。
+     * @example
+     * ```ts
+     * import { game } from 'cc';
+     * game.on(Game.EVENT_PRE_BASE_INIT, function () {
+     *
+     * });
+     * ```
      */
     public static readonly EVENT_PRE_BASE_INIT = 'pre_base_init';
     /**
      * @en Event triggered post base module initialization, at this point you can use pal/logging/sys/settings API safely.
-     * @zh 基础模块初始化之后的事件，在这个事件点你可以安全使用 pal/logging/sys/settings 的相关接口。
+     * @zh 基础模块初始化之后的事件，在这个时间点你可以安全使用 pal/logging/sys/settings 的相关接口。
      */
     public static readonly EVENT_POST_BASE_INIT = 'post_base_init';
     /**
      * @en Event triggered pre infrastructure initialization, at this point you can not use assetManager/gfx/screen/builtinResMgr/macro/Layer API.
-     * @zh 基础设施初始化之前的事件，在这个事件点你无法使用 assetManager/gfx/screen/builtinResMgr/macro/Layer 的相关接口。
+     * @zh 基础设施初始化之前的事件，在这个时间点你无法使用 assetManager/gfx/screen/builtinResMgr/macro/Layer 的相关接口。
+     * @example
+     * ```ts
+     * import { game } from 'cc';
+     * game.on(Game.EVENT_PRE_INFRASTRUCTURE_INIT, function () {
+     *
+     * });
+     * ```
      */
     public static readonly EVENT_PRE_INFRASTRUCTURE_INIT = 'pre_infrastructure_init';
     /**
      * @en Event triggered post infrastructure initialization, at this point you can use assetManager/gfx/screen/builtinResMgr/macro/Layer API safely.
-     * @zh 基础设施初始化之后的事件，在这个事件点你可以安全使用 assetManager/gfx/screen/builtinResMgr/macro/Layer 的相关接口。
+     * @zh 基础设施初始化之后的事件，在这个时间点你可以安全使用 assetManager/gfx/screen/builtinResMgr/macro/Layer 的相关接口。
+     * @example
+     * import { game } from 'cc';
+     * game.on(Game.EVENT_POST_INFRASTRUCTURE_INIT, function () {
+     *
+     * });
+     * ```
      */
     public static readonly EVENT_POST_INFRASTRUCTURE_INIT = 'post_infrastructure_init';
     /**
      * @en Event triggered pre subsystem initialization, at this point you can not use physics/animation/rendering/tween/etc API.
-     * @zh 子系统初始化之前的事件，在这个事件点你无法使用 physics/animation/rendering/tween/etc 的相关接口。
+     * @zh 子系统初始化之前的事件，在这个时间点你无法使用 physics/animation/rendering/tween/etc 的相关接口。
+     * @example
+     * ```ts
+     * import { game } from 'cc';
+     * game.on(Game.EVENT_PRE_SUBSYSTEM_INIT, function () {
+     *
+     * });
+     * ```
      */
     public static readonly EVENT_PRE_SUBSYSTEM_INIT = 'pre_subsystem_init';
     /**
      * @en Event triggered post subsystem initialization, at this point you can use physics/animation/rendering/tween/etc API safely.
-     * @zh 子系统初始化之后的事件，在这个事件点你可以安全使用 physics/animation/rendering/tween/etc 的相关接口。
+     * @zh 子系统初始化之后的事件，在这个时间点你可以安全使用 physics/animation/rendering/tween/etc 的相关接口。
+     * @example
+     * ```ts
+     * import { game } from 'cc';
+     * game.on(Game.EVENT_POST_SUBSYSTEM_INIT, function () {
+     *
+     * });
+     * ```
      */
     public static readonly EVENT_POST_SUBSYSTEM_INIT = 'post_subsystem_init';
     /**
      * @en Event triggered pre project data initialization,
      * at this point you can not access project data using [resources.load]/[director.loadScene] API.
-     * @zh 项目数据初始化之前的事件，在这个事件点你无法使用访问项目数据的相关接口，例如 [resources.load]/[director.loadScene] 等 API。
+     * @zh 项目数据初始化之前的事件，在这个时间点你无法使用访问项目数据的相关接口，例如 [resources.load]/[director.loadScene] 等 API。
+     * @example
+     * ```ts
+     * import { game } from 'cc';
+     * game.on(Game.EVENT_PRE_PROJECT_INIT, function () {
+     *
+     * });
+     * ```
      */
     public static readonly EVENT_PRE_PROJECT_INIT = 'pre_project_init';
     /**
      * @en Event triggered post project data initialization,
      * at this point you can access project data using [resources.load]/[director.loadScene] API safely.
-     * @zh 项目数据初始化之后的事件，在这个事件点你可以安全使用访问项目数据的相关接口，例如 [resources.load]/[director.loadScene] 等 API。
+     * @zh 项目数据初始化之后的事件，在这个时间点你可以安全使用访问项目数据的相关接口，例如 [resources.load]/[director.loadScene] 等 API。
+     * @example
+     * ```ts
+     * import { game } from 'cc';
+     * game.on(Game.EVENT_POST_PROJECT_INIT, function () {
+     *
+     * });
+     * ```
      */
     public static readonly EVENT_POST_PROJECT_INIT = 'post_project_init';
 
     /**
      * @en Event triggered when game restart
      * @zh 调用restart后，触发事件
+     * @example
+     * ```ts
+     * import { game } from 'cc';
+     * game.on(Game.EVENT_RESTART, function () {
+     *
+     * });
+     * ```
      */
     public static readonly EVENT_RESTART = 'game_on_restart';
 
@@ -338,12 +400,26 @@ export class Game extends EventTarget {
     /**
      * @en Triggered when the game is resumed.<br>
      * @zh 游戏恢复时触发该事件。<br>
+     * @example
+     * ```ts
+     * import { game } from 'cc';
+     * game.on(Game.EVENT_RESUME, function () {
+     *     //resume audio or video
+     * });
+     * ```
      */
     public static readonly EVENT_RESUME = 'game_on_resume';
 
     /**
      * @en Triggered when the game will be closed. <br>
      * @zh 游戏将要关闭时触发的事件。<br>
+     * @example
+     * ```ts
+     * import { game } from 'cc';
+     * game.on(Game.EVENT_CLOSE, function () {
+     *
+     * });
+     * ```
      */
     public static readonly EVENT_CLOSE = 'game_on_close';
 
@@ -511,48 +587,48 @@ export class Game extends EventTarget {
 
     /**
      * @en The event delegate pre base module initialization. At this point you can not use pal/logging/sys/settings API.
-     * @zh 基础模块初始化之前的事件代理。在这个事件点你无法使用 pal/logging/sys/settings 的相关接口。
+     * @zh 基础模块初始化之前的事件代理。在这个时间点你无法使用 pal/logging/sys/settings 的相关接口。
      */
     public readonly onPreBaseInitDelegate: AsyncDelegate<() => (Promise<void> | void)> = new AsyncDelegate();
     /**
      * @en The event delegate post base module initialization. At this point you can use pal/logging/sys/settings API safely.
-     * @zh 基础模块初始化之后的事件代理。在这个事件点你可以安全使用 pal/logging/sys/settings 的相关接口。
+     * @zh 基础模块初始化之后的事件代理。在这个时间点你可以安全使用 pal/logging/sys/settings 的相关接口。
      */
     public readonly onPostBaseInitDelegate: AsyncDelegate<() => (Promise<void> | void)> = new AsyncDelegate();
     /**
      * @en The event delegate pre infrastructure module initialization.
      * At this point you can not use assetManager/gfx/screen/builtinResMgr/macro/Layer API.
-     * @zh 基础设施模块初始化之前的事件代理。在这个事件点你无法使用 assetManager/gfx/screen/builtinResMgr/macro/Layer 的相关接口。
+     * @zh 基础设施模块初始化之前的事件代理。在这个时间点你无法使用 assetManager/gfx/screen/builtinResMgr/macro/Layer 的相关接口。
      */
     public readonly onPreInfrastructureInitDelegate: AsyncDelegate<() => (Promise<void> | void)> = new AsyncDelegate();
     /**
      * @en The event delegate post infrastructure module initialization.
      * At this point you can use assetManager/gfx/screen/builtinResMgr/macro/Layer API safely.
      *
-     * @zh 基础设施模块初始化之后的事件代理。在这个事件点你可以安全使用 assetManager/gfx/screen/builtinResMgr/macro/Layer 的相关接口。
+     * @zh 基础设施模块初始化之后的事件代理。在这个时间点你可以安全使用 assetManager/gfx/screen/builtinResMgr/macro/Layer 的相关接口。
      */
     public readonly onPostInfrastructureInitDelegate: AsyncDelegate<() => (Promise<void> | void)> = new AsyncDelegate();
     /**
      * @en The event delegate pre sub system module initialization. At this point you can not use physics/animation/rendering/tween/etc API.
-     * @zh 子系统模块初始化之前的事件代理。在这个事件点你无法使用 physics/animation/rendering/tween/etc 的相关接口。
+     * @zh 子系统模块初始化之前的事件代理。在这个时间点你无法使用 physics/animation/rendering/tween/etc 的相关接口。
      */
     public readonly onPreSubsystemInitDelegate: AsyncDelegate<() => (Promise<void> | void)> = new AsyncDelegate();
     /**
      * @en The event delegate post sub system module initialization. At this point you can use physics/animation/rendering/tween/etc API safely.
-     * @zh 子系统模块初始化之后的事件代理。在这个事件点你可以安全使用 physics/animation/rendering/tween/etc 的相关接口。
+     * @zh 子系统模块初始化之后的事件代理。在这个时间点你可以安全使用 physics/animation/rendering/tween/etc 的相关接口。
      */
     public readonly onPostSubsystemInitDelegate: AsyncDelegate<() => (Promise<void> | void)> = new AsyncDelegate();
     /**
      * @en The event delegate pre project data initialization.
      * At this point you can not access project data using [resources.load]/[director.loadScene] API.
-     * @zh 项目数据初始化之前的事件代理。在这个事件点你无法使用访问项目数据的相关接口，例如 [resources.load]/[director.loadScene] 等 API。
+     * @zh 项目数据初始化之前的事件代理。在这个时间点你无法使用访问项目数据的相关接口，例如 [resources.load]/[director.loadScene] 等 API。
      */
     public readonly onPreProjectInitDelegate: AsyncDelegate<() => (Promise<void> | void)> = new AsyncDelegate();
     /**
      * @en The event delegate post project data initialization.
      * at this point you can access project data using [resources.load]/[director.loadScene] API safely.
      * @zh 项目数据初始化之后的事件代理。
-     * 在这个事件点你可以安全使用访问项目数据的相关接口，例如 [resources.load]/[director.loadScene] 等 API。
+     * 在这个时间点你可以安全使用访问项目数据的相关接口，例如 [resources.load]/[director.loadScene] 等 API。
      */
     public readonly onPostProjectInitDelegate: AsyncDelegate<() => (Promise<void> | void)> = new AsyncDelegate();
 
