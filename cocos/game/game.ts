@@ -453,8 +453,8 @@ export class Game extends EventTarget {
     public static DEBUG_DT_THRESHOLD = 1;
 
     /**
-     * @en The outer frame of the game canvas; parent of game container.
-     * @zh 游戏画布的外框，container 的父容器。
+     * @en On the Web platform, it is the outer frame of the game canvas and the parent container of the container; on other platforms, it is a global object.
+     * @zh 在 Web 平台为游戏画布的外框，container 的父容器，在其余平台为全局对象。
      *
      * @deprecated since 3.4.0, frame is a concept on web standard, please manager screens via the `screen` module.
      */
@@ -475,6 +475,11 @@ export class Game extends EventTarget {
     /**
      * @en The renderer backend of the game.
      * @zh 游戏的渲染器类型。
+     * @example
+     * ```ts
+     * import { game } from 'cc';
+     * console.log(game.renderType === game.RENDER_TYPE_WEBGL); // true or false
+     * ```
      */
     public renderType = -1;
 
@@ -483,11 +488,9 @@ export class Game extends EventTarget {
 
     /**
      * @en
-     * The current game configuration,
-     * please be noticed any modification directly on this object after the game initialization won't take effect.
+     * The game configuration managed internally by the engine, the project should use another object as the game configuration.
      * @zh
-     * 当前的游戏配置
-     * 注意：请不要直接修改这个对象，它不会有任何效果。
+     * 引擎内部管理的游戏配置，项目应该使用另外的对象作为游戏配置
      */
     public config: IGameConfig = {} as IGameConfig;
 
@@ -504,7 +507,7 @@ export class Game extends EventTarget {
 
     /**
      * @en Indicates whether the engine and the renderer has been initialized
-     * @zh 引擎和渲染器是否以完成初始化
+     * @zh 引擎和渲染器是否已完成初始化
      */
     public get inited (): boolean {
         return this._inited;
