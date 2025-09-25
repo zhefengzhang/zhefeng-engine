@@ -47,14 +47,14 @@ import type { Game } from './game';
 export enum DirectorEvent {
     /**
      * @en The event which will be triggered when the singleton of Director initialized.
-     * @zh Director 单例初始化时触发的事件
+     * @zh Director 单例初始化时即调用init函数时触发的事件
      * @event INIT
      */
     INIT = 'director_init',
 
     /**
      * @en The event which will be triggered when the singleton of Director reset.
-     * @zh Director 单例重置时触发的事件
+     * @zh Director 单例重置时即调用reset函数时触发的事件
      * @event RESET
      */
     RESET = 'director_reset',
@@ -165,7 +165,7 @@ export enum DirectorEvent {
  * Since the `director` is a singleton, you don't need to call any constructor or create functions,
  * the standard way to use it is by calling:
  * `director.methodName();`
- * It creates and handle the main Window and manages how and when to execute the Scenes.
+ * It creates and handle the main scene and manages how and when to execute the Scenes.
  *
  * @zh
  * 注意：用 `director` 代替 `Director`。
@@ -173,119 +173,55 @@ export enum DirectorEvent {
  * 由于 `director` 是一个单例，你不需要调用任何构造函数或创建函数，
  * 使用它的标准方法是通过调用：
  * `director.methodName();`
- * 它创建和处理主窗口并且管理什么时候执行场景。
+ * 它的作用是创建和处理主场景并且管理什么时候执行场景。
  */
 export class Director extends EventTarget {
-    /**
-     * @en The event which will be triggered when the singleton of Director initialized.
-     * @zh Director 单例初始化时触发的事件
-     * @event Director.EVENT_INIT
-     */
+    /** @see DirectorEvent.INIT */
     public static readonly EVENT_INIT = DirectorEvent.INIT;
 
-    /**
-     * @en The event which will be triggered when the singleton of Director reset.
-     * @zh Director 单例重置时触发的事件
-     * @event Director.EVENT_RESET
-     */
+    /** @see DirectorEvent.RESET */
     public static readonly EVENT_RESET = DirectorEvent.RESET;
 
-    /**
-     * @en The event which will be triggered before loading a new scene.
-     * @zh 加载新场景之前所触发的事件。
-     * @event Director.EVENT_BEFORE_SCENE_LOADING
-     */
+    /** @see DirectorEvent.BEFORE_SCENE_LOADING */
     public static readonly EVENT_BEFORE_SCENE_LOADING = DirectorEvent.BEFORE_SCENE_LOADING;
 
-    /**
-     * @en The event which will be triggered before launching a new scene.
-     * @zh 运行新场景之前所触发的事件。
-     * @event Director.EVENT_BEFORE_SCENE_LAUNCH
-     */
+    /** @see DirectorEvent.BEFORE_SCENE_LAUNCH */
     public static readonly EVENT_BEFORE_SCENE_LAUNCH = DirectorEvent.BEFORE_SCENE_LAUNCH;
 
-    /**
-     * @en The event which will be triggered after launching a new scene.
-     * @zh 运行新场景之后所触发的事件。
-     * @event Director.EVENT_AFTER_SCENE_LAUNCH
-     */
+    /** @see DirectorEvent.AFTER_SCENE_LAUNCH */
     public static readonly EVENT_AFTER_SCENE_LAUNCH = DirectorEvent.AFTER_SCENE_LAUNCH;
 
-    /**
-     * @en The event which will be triggered at the beginning of every frame.
-     * @zh 每个帧的开始时所触发的事件。
-     * @event Director.EVENT_BEFORE_UPDATE
-     */
+    /** @see DirectorEvent.BEFORE_UPDATE */
     public static readonly EVENT_BEFORE_UPDATE = DirectorEvent.BEFORE_UPDATE;
 
-    /**
-     * @en The event which will be triggered after engine and components update logic.
-     * @zh 将在引擎和组件 “update” 逻辑之后所触发的事件。
-     * @event Director.EVENT_AFTER_UPDATE
-     */
+    /** @see DirectorEvent.AFTER_UPDATE */
     public static readonly EVENT_AFTER_UPDATE = DirectorEvent.AFTER_UPDATE;
 
-    /**
-     * @en The event which will be triggered before the rendering process.
-     * @zh 渲染过程之前所触发的事件。
-     * @event Director.EVENT_BEFORE_DRAW
-     */
+    /** @see DirectorEvent.BEFORE_DRAW */
     public static readonly EVENT_BEFORE_DRAW = DirectorEvent.BEFORE_DRAW;
 
-    /**
-     * @en The event which will be triggered after the rendering process.
-     * @zh 渲染过程之后所触发的事件。
-     * @event Director.EVENT_AFTER_DRAW
-     */
+    /** @see DirectorEvent.AFTER_DRAW */
     public static readonly EVENT_AFTER_DRAW = DirectorEvent.AFTER_DRAW;
 
-    /**
-     * @en The event which will be triggered before the pipeline render commit.
-     * @zh 当前渲染帧提交前所触发的事件。
-     * @event Director.EVENT_BEFORE_COMMIT
-     */
+    /** @see DirectorEvent.BEFORE_COMMIT */
     public static readonly EVENT_BEFORE_COMMIT = DirectorEvent.BEFORE_COMMIT;
 
-    /**
-     * @en The event which will be triggered before the render pipeline processes the render scene.
-     * @zh 当前帧将渲染场景提交到渲染管线之前所触发的事件。
-     * @event Director.EVENT_BEFORE_RENDER
-     */
+    /** @see DirectorEvent.BEFORE_RENDER */
     public static readonly EVENT_BEFORE_RENDER = DirectorEvent.BEFORE_RENDER;
 
-    /**
-     * @en The event which will be triggered after the render pipeline finishes the rendering process on CPU.
-     * @zh 当前帧渲染管线渲染流程完成后所触发的事件。
-     * @event Director.EVENT_AFTER_RENDER
-     */
+    /** @see DirectorEvent.AFTER_RENDER */
     public static readonly EVENT_AFTER_RENDER = DirectorEvent.AFTER_RENDER;
 
-    /**
-     * @en The event which will be triggered before the physics process.<br/>
-     * @zh 物理过程之前所触发的事件。
-     * @event Director.EVENT_BEFORE_PHYSICS
-     */
+    /** @see DirectorEvent.BEFORE_PHYSICS */
     public static readonly EVENT_BEFORE_PHYSICS = DirectorEvent.BEFORE_PHYSICS;
 
-    /**
-     * @en The event which will be triggered after the physics process.<br/>
-     * @zh 物理过程之后所触发的事件。
-     * @event Director.EVENT_AFTER_PHYSICS
-     */
+    /** @see DirectorEvent.AFTER_PHYSICS */
     public static readonly EVENT_AFTER_PHYSICS = DirectorEvent.AFTER_PHYSICS;
 
-    /**
-     * @en The event which will be triggered at the frame begin.<br/>
-     * @zh 一帧开始时所触发的事件。
-     * @event Director.EVENT_BEGIN_FRAME
-     */
+    /** @see DirectorEvent.BEGIN_FRAME */
     public static readonly EVENT_BEGIN_FRAME = DirectorEvent.BEGIN_FRAME;
 
-    /**
-     * @en The event which will be triggered at the frame end.<br/>
-     * @zh 一帧结束之后所触发的事件。
-     * @event Director.EVENT_END_FRAME
-     */
+    /** @see DirectorEvent.END_FRAME */
     public static readonly EVENT_END_FRAME = DirectorEvent.END_FRAME;
 
     public static instance: Director;
@@ -315,6 +251,11 @@ export class Director extends EventTarget {
     /**
      * @en End the life of director in the next frame
      * @zh 执行完当前帧后停止 director 的执行
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.end();
+     * ```
      */
     public end (): void {
         this.once(DirectorEvent.END_FRAME, (): void => {
@@ -327,8 +268,13 @@ export class Director extends EventTarget {
      * It won't pause the rendering process nor the event manager.<br>
      * If you want to pause the entire game including rendering, audio and event,<br>
      * please use `game.pause`.
-     * @zh 暂停正在运行的场景，该暂停只会停止游戏逻辑执行，但是不会停止渲染和 UI 响应。<br>
+     * @zh 暂停正在运行的场景，只会停止游戏逻辑执行，但是不会停止渲染和 UI 响应。<br>
      * 如果想要更彻底得暂停游戏，包含渲染，音频和事件，请使用 `game.pause` 。
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.pause();
+     * ```
      */
     public pause (): void {
         this._paused = true;
@@ -339,6 +285,11 @@ export class Director extends EventTarget {
      * remove all event listeners, clean up and exit the running scene, stops all animations, clear cached data.
      * @zh 清除 `director` 本身，包括停止所有的计时器，<br>
      * 移除所有的事件监听器，清理并退出当前运行的场景，停止所有动画，清理缓存数据。
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.purgeDirector();
+     * ```
      */
     public purgeDirector (): void {
         // cleanup scheduler
@@ -362,7 +313,12 @@ export class Director extends EventTarget {
 
     /**
      * @en Reset the director, can be used to restart the director after purge
-     * @zh 重置此 Director，可用于在清除后重启 Director。
+     * @zh 重置Director，可用于在清除后重启 Director。
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.reset();
+     * ```
      */
     public reset (): void {
         this.purgeDirector();
@@ -386,10 +342,18 @@ export class Director extends EventTarget {
      * @en
      * Run a scene. Replaces the running scene with a new one or enter the first scene.<br>
      * The new scene will be launched immediately.
-     * @zh 运行指定场景。将正在运行的场景替换为（或重入为）新场景。新场景将立即启动。
+     * @zh 运行指定场景。将正在运行的场景替换为（或重载为）新场景。新场景将立即启动。
      * @param scene - The need run scene.
      * @param onBeforeLoadScene - The function invoked at the scene before loading.
      * @param onLaunched - The function invoked at the scene after launch.
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.runSceneImmediate(newScene, 
+     *   () => console.log('Before load'),
+     *   (err, scene) => console.log('Launched')
+     * );
+     * ```
      */
     public runSceneImmediate (
         scene: Scene | SceneAsset,
@@ -501,7 +465,14 @@ export class Director extends EventTarget {
      * @param scene - The need run scene.
      * @param onBeforeLoadScene - The function invoked at the scene before loading.
      * @param onLaunched - The function invoked at the scene after launch.
-     * @private
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.runScene(newScene, 
+     * () => console.log('Before load'),
+     * (err, scene) => console.log('Launched')
+     * );
+     * ```
      */
     public runScene (scene: Scene | SceneAsset, onBeforeLoadScene?: Director.OnBeforeLoadScene, onLaunched?: Director.OnSceneLaunched): void {
         if (scene instanceof SceneAsset) scene = scene.scene!;
@@ -520,7 +491,16 @@ export class Director extends EventTarget {
      *
      * @param sceneName - The name of the scene to load.
      * @param onLaunched - callback, will be called after scene launched.
+     * @param onUnloaded - The function invoked at the scene before loading.
      * @return if error, return false
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.loadScene(newScene, 
+     * (err, scene) => console.log('onLaunched'),
+     * () => console.log('onUnloaded')
+     * );
+     * ```
      */
     public loadScene (sceneName: string, onLaunched?: Director.OnSceneLaunched, onUnloaded?: Director.OnUnload): boolean {
         if (this._loadingScene) {
@@ -560,10 +540,17 @@ export class Director extends EventTarget {
      * It will be totally fine to call `director.loadScene` at any time even if the preloading is not<br>
      * yet finished, the scene will be launched after loaded automatically.
      * @zh 预加载场景资源，你可以在任何时候调用这个方法。
-     * 调用完后，你仍然需要通过 `director.loadScene` 来启动场景，因为这个方法不会执行场景加载操作。<br>
+     * 因为这个方法不会执行场景加载操作, 所以调用完后，你仍然需要通过 `director.loadScene` 来启动场景。<br>
      * 就算预加载还没完成，你也可以直接调用 `director.loadScene`，加载完成后场景就会启动。
      * @param sceneName @en The name of the scene to load @zh 场景名称。
      * @param onLoaded @en Callback to execute once the scene is loaded @zh 加载回调。
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.preloadScene(newScene, 
+     * (err) => console.log('onLoaded')
+     * );
+     * ```
      */
     public preloadScene (sceneName: string, onLoaded?: Director.OnSceneLoaded): void;
 
@@ -574,11 +561,19 @@ export class Director extends EventTarget {
      * It will be totally fine to call `director.loadScene` at any time even if the preloading is not<br>
      * yet finished, the scene will be launched after loaded automatically.
      * @zh 预加载场景，你可以在任何时候调用这个方法。
-     * 调用完后，你仍然需要通过 `director.loadScene` 来启动场景，因为这个方法不会执行场景加载操作。<br>
+     * 因为这个方法不会执行场景加载操作, 所以调用完后，你仍然需要通过 `director.loadScene` 来启动场景。<br>
      * 就算预加载还没完成，你也可以直接调用 `director.loadScene`，加载完成后场景就会启动。
      * @param sceneName @en The name of scene to load @zh 场景名称。
-     * @param onProgress @en Callback to execute when the load progression change.  @zh 加载进度回调。
+     * @param onProgress @en Callback to execute when the load progression change.  @zh 加载进度回调。无效
      * @param onLoaded @en Callback to execute once the scene is loaded @zh 加载回调。
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.preloadScene(newScene, 
+     * (arg1,arg2,arg3,arg4) => console.log('onProgress')
+     * (err) => console.log('onLoaded')
+     * );
+     * ```
      */
     public preloadScene (sceneName: string, onProgress: Director.OnLoadSceneProgress, onLoaded: Director.OnSceneLoaded): void;
 
@@ -607,7 +602,12 @@ export class Director extends EventTarget {
 
     /**
      * @en Resume game logic execution after pause, if the current scene is not paused, nothing will happen.
-     * @zh 恢复暂停场景的游戏逻辑，如果当前场景没有暂停将没任何事情发生。
+     * @zh 恢复暂停场景的游戏逻辑，如果当前场景没有暂停将不做任何事情。
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.resume();
+     * ```
      */
     public resume (): void {
         this._paused = false;
@@ -620,8 +620,9 @@ export class Director extends EventTarget {
     /**
      * @en Returns current logic Scene.
      * @zh 获取当前逻辑场景。
+     * @return {Scene | null}
      * @example
-     * ```
+     * ```typescript
      * import { director } from 'cc';
      * // This will help you to get the Canvas node in scene
      * director.getScene().getChildByName('Canvas');
@@ -661,6 +662,12 @@ export class Director extends EventTarget {
     /**
      * @en Returns how many frames were called since the director started.
      * @zh 获取 director 启动以来游戏运行的总帧数。
+     * @return {number}
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.getTotalFrames();
+     * ```
      */
     public getTotalFrames (): number {
         return this._totalFrames;
@@ -669,6 +676,12 @@ export class Director extends EventTarget {
     /**
      * @en Returns whether or not the Director is paused.
      * @zh 是否处于暂停状态。
+     * @return {boolean}
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.isPaused();
+     * ```
      */
     public isPaused (): boolean {
         return this._paused;
@@ -677,6 +690,12 @@ export class Director extends EventTarget {
     /**
      * @en Returns the scheduler associated with this director.
      * @zh 获取和 director 相关联的调度器。
+     * @return {Scheduler}
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.getScheduler();
+     * ```
      */
     public getScheduler (): Scheduler {
         return this._scheduler;
@@ -685,6 +704,12 @@ export class Director extends EventTarget {
     /**
      * @en Sets the scheduler associated with this director.
      * @zh 设置和 director 相关联的调度器。
+     * @param {Scheduler} scheduler
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.setScheduler(scheduler);
+     * ```
      */
     public setScheduler (scheduler: Scheduler): void {
         if (this._scheduler !== scheduler) {
@@ -697,6 +722,14 @@ export class Director extends EventTarget {
     /**
      * @en Register a system.
      * @zh 注册一个系统。
+     * @param {string} name 系统名称
+     * @param {System} sys 系统实例
+     * @param {number} priority 系统优先级
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.registerSystem(name, sys, priority);
+     * ```
      */
     public registerSystem (name: string, sys: System, priority: number): void {
         sys.id = name;
@@ -705,6 +738,16 @@ export class Director extends EventTarget {
         this._systems.sort(System.sortByPriority);
     }
 
+    /**
+     * @en Unregister a system.
+     * @zh 注销一个系统。
+     * @param {System} sys 系统实例
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.unregisterSystem(sys);
+     * ```
+     */
     public unregisterSystem (sys: System): void {
         js.array.fastRemove(this._systems, sys);
         this._systems.sort(System.sortByPriority);
@@ -713,6 +756,13 @@ export class Director extends EventTarget {
     /**
      * @en get a system.
      * @zh 获取一个 system。
+     * @param {string} name 系统名称
+     * @return {System | undefined}
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.getSystem(name);
+     * ```
      */
     public getSystem (name: string): System | undefined {
         return this._systems.find((sys): boolean => sys.id === name);
@@ -731,6 +781,11 @@ export class Director extends EventTarget {
     /**
      * @en Starts the director
      * @zh 开始执行游戏逻辑
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.startAnimation();
+     * ```
      */
     public startAnimation (): void {
         this._invalid = false;
@@ -739,6 +794,11 @@ export class Director extends EventTarget {
     /**
      * @en Stops the director
      * @zh 停止执行游戏逻辑，每帧渲染会继续执行
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.stopAnimation();
+     * ```
      */
     public stopAnimation (): void {
         this._invalid = true;
@@ -748,6 +808,11 @@ export class Director extends EventTarget {
      * @en Run main loop of director
      * @zh 运行主循环
      * @deprecated Since v3.6, please use [tick] instead
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.mainLoop(now);
+     * ```
      */
     public mainLoop (now: number): void {
         let dt: number;
@@ -763,6 +828,11 @@ export class Director extends EventTarget {
      * @en Run main loop of director
      * @zh 运行主循环
      * @param dt Delta time in seconds
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.tick(dt);
+     * ```
      */
     public tick (dt: number): void {
         if (!this._invalid) {
@@ -812,6 +882,11 @@ export class Director extends EventTarget {
      * @engineInternal
      * @en Build custom render pipeline
      * @zh 构建自定义渲染管线
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.buildRenderPipeline();
+     * ```
      */
     public buildRenderPipeline (): void {
         if (!this._root) {
@@ -845,6 +920,13 @@ export class Director extends EventTarget {
 
     /**
      * @internal
+     * @en Initialize director
+     * @zh 初始化 director
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.init();
+     * ```
      */
     public init (): void {
         this._totalFrames = 0;
@@ -871,9 +953,14 @@ export class Director extends EventTarget {
      * Add a persistent root node to the game, the persistent node won't be destroyed during scene transition.<br>
      * The target node must be placed in the root level of hierarchy, otherwise this API won't have any effect.
      * @zh
-     * 声明常驻根节点，该节点不会在场景切换中被销毁。<br>
+     * 添加常驻根节点，该节点不会在场景切换中被销毁。<br>
      * 目标节点必须位于为层级的根节点，否则无效。
-     * @param node - The node to be made persistent
+     * @param {Node} node - The node to be made persistent
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.addPersistRootNode(node);
+     * ```
      */
     public addPersistRootNode (node: Node): void {
         if (!Node.isNode(node) || !node.uuid) {
@@ -906,7 +993,12 @@ export class Director extends EventTarget {
     /**
      * @en Remove a persistent root node.
      * @zh 取消常驻根节点。
-     * @param node - The node to be removed from persistent node list
+     * @param {Node} node - The node to be removed from persistent node list
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.removePersistRootNode(node);
+     * ```
      */
     public removePersistRootNode (node: Node): void {
         const id = node.uuid || '';
@@ -921,7 +1013,12 @@ export class Director extends EventTarget {
     /**
      * @en Check whether the node is a persistent root node.
      * @zh 检查节点是否是常驻根节点。
-     * @param node - The node to be checked
+     * @param {Node} node - The node to be checked
+     * @example
+     * ```typescript
+     * import { director } from 'cc';
+     * director.isPersistRootNode(node);
+     * ```
      */
     public isPersistRootNode (node: Node): boolean {
         return !!node._persistNode;
@@ -950,6 +1047,6 @@ cclegacy.DirectorEvent = DirectorEvent;
 
 /**
  * @en Director of the game, used to control game update loop and scene management
- * @zh 游戏的导演，用于控制游戏更新循环与场景管理。
+ * @zh 游戏的导演单例，用于控制游戏更新循环与场景管理。
  */
 export const director: Director = Director.instance = cclegacy.director = new Director();
