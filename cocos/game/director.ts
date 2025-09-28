@@ -299,8 +299,8 @@ export class Director extends EventTarget {
         this._nodeActivator.reset();
 
         if (!EDITOR) {
-            if (isValid(this._scene)) {
-                this._scene!.destroy();
+            if (this._scene && isValid(this._scene)) {
+                this._scene.destroy();
             }
             this._scene = null;
         }
@@ -349,7 +349,7 @@ export class Director extends EventTarget {
      * @example
      * ```typescript
      * import { director } from 'cc';
-     * director.runSceneImmediate(newScene, 
+     * director.runSceneImmediate(newScene,
      *   () => console.log('Before load'),
      *   (err, scene) => console.log('Launched')
      * );
@@ -406,8 +406,8 @@ export class Director extends EventTarget {
             // eslint-disable-next-line no-console
             console.time('Destroy');
         }
-        if (isValid(oldScene)) {
-            oldScene!.destroy();
+        if (oldScene && isValid(oldScene)) {
+            oldScene.destroy();
         }
         if (!EDITOR) {
             // auto release assets
@@ -468,7 +468,7 @@ export class Director extends EventTarget {
      * @example
      * ```typescript
      * import { director } from 'cc';
-     * director.runScene(newScene, 
+     * director.runScene(newScene,
      * () => console.log('Before load'),
      * (err, scene) => console.log('Launched')
      * );
@@ -496,7 +496,7 @@ export class Director extends EventTarget {
      * @example
      * ```typescript
      * import { director } from 'cc';
-     * director.loadScene(newScene, 
+     * director.loadScene(newScene,
      * (err, scene) => console.log('onLaunched'),
      * () => console.log('onUnloaded')
      * );
@@ -547,7 +547,7 @@ export class Director extends EventTarget {
      * @example
      * ```typescript
      * import { director } from 'cc';
-     * director.preloadScene(newScene, 
+     * director.preloadScene(newScene,
      * (err) => console.log('onLoaded')
      * );
      * ```
@@ -569,7 +569,7 @@ export class Director extends EventTarget {
      * @example
      * ```typescript
      * import { director } from 'cc';
-     * director.preloadScene(newScene, 
+     * director.preloadScene(newScene,
      * (arg1,arg2,arg3,arg4) => console.log('onProgress')
      * (err) => console.log('onLoaded')
      * );
