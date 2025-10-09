@@ -127,8 +127,9 @@ export enum Overflow {
     SHRINK = 2,
     /**
      * @en In RESIZE_HEIGHT mode, you can only change the width of label and the height is changed automatically.
+     * This mode may takes up more CPU resources when the label is refreshed.
      *
-     * @zh 在 RESIZE_HEIGHT 模式下，只能更改文本的宽度，高度是自动改变的。
+     * @zh 在 RESIZE_HEIGHT 模式下，只能更改文本的宽度，高度是自动改变的。这个模式在文本刷新的时候可能会占用较多 CPU 资源。
      */
     RESIZE_HEIGHT = 3,
 }
@@ -148,18 +149,17 @@ export enum CacheMode {
      */
     NONE = 0,
     /**
-     * @en In BITMAP mode, cache the label as a static image and add it to the dynamic atlas for batch rendering,
-     * and can batching with Sprites using broken images.
+     * @en In BITMAP mode, the character textures of the Label are added to the engine's dynamic atlas for rendering batch merging.
+     * (Note: This function is invalid when the dynamic atlas is turned off)
      *
-     * @zh BITMAP 模式，将 label 缓存成静态图像并加入到动态图集，以便进行批次合并，可与使用碎图的 Sprite 进行合批。
-     * （注：动态图集在 Chrome 以及微信小游戏暂时关闭，该功能无效）。
+     * @zh BITMAP 模式下，将 Label 的字符纹理添加到引擎的动态图集进行渲染批次合并。
+     * （注：动态图集关闭时该功能无效）。
      */
     BITMAP = 1,
     /**
-     * @en In CHAR mode, split text into characters and cache characters into a dynamic atlas which the size of 1024 * 1024.
+     * @en In CHAR mode, a sprite sheet with a maximum size of 1024 * 1024 is used to merge the character textures of Label. The texture of this sprite sheet does not participate in dynamic sprite sheet merging.
      *
-     * @zh CHAR 模式，将文本拆分为字符，并将字符缓存到一张单独的大小为 1024 * 1024 的图集中进行重复使用，不再使用动态图集。
-     * （注：当图集满时将不再进行缓存，暂时不支持 SHRINK 自适应文本尺寸（后续完善））。
+     * @zh CHAR 模式下，使用一张最大尺寸为 1024 * 1024 的图集合并 Label 的字符纹理，此图集的纹理不参与动态合图。
      */
     CHAR = 2,
 }
@@ -203,7 +203,9 @@ export class Label extends UIRenderer {
      */
     public static CacheMode = CacheMode;
     /**
-     * @deprecated since v3.7.0, this is an engine private interface that will be removed in the future.
+     * @en The canvas element object cache pool used by the Label component
+     * 
+     * @zh Label 组件使用的 canvas element 对象缓存池
      */
     public static _canvasPool = CanvasPool.getInstance();
 
@@ -376,10 +378,14 @@ export class Label extends UIRenderer {
 
     /**
      * @en
-     * Whether auto wrap label when string width is large than label width.
+     * Whether to wrap lines automatically. 
+     * Enabling automatic line wrapping will consume more CPU resources, so it is not recommended to use it with a large amount of text. 
+     * Manual line wrapping can be achieved by adding line breaks in the string attribute.
      *
      * @zh
      * 是否自动换行。
+     * 开启自动换行将消耗更多的 CPU 资源，不建议在大量文本时使用。
+     * 通过在 string 属性中加入换行符可以使用手动换行。
      */
     @displayOrder(11)
     get enableWrapText (): boolean {
@@ -488,10 +494,15 @@ export class Label extends UIRenderer {
 
     /**
      * @en
-     * The cache mode of label. This mode only supports system fonts.
+     * The cache mode of label.
      *
      * @zh
-     * 文本缓存模式, 该模式只支持系统字体。
+     * 文本缓存模式。
+     * 
+     * @example
+     * ```typescript
+     * label.cacheMode = Label.CacheMode.CHAR;
+     * ```
      */
     @type(CacheMode)
     @displayOrder(14)
@@ -518,10 +529,10 @@ export class Label extends UIRenderer {
 
     /**
      * @en
-     * Whether the font is bold.
+     * Whether the font is bold. CHAR cache mode is not supported temporarily.
      *
      * @zh
-     * 字体是否加粗。
+     * 字体是否加粗。暂不支持 CHAR 缓存模式。
      */
     @displayOrder(15)
     get isBold (): boolean {
@@ -538,10 +549,10 @@ export class Label extends UIRenderer {
 
     /**
      * @en
-     * Whether the font is italic.
+     * Whether the font is italic. CHAR cache mode is not supported temporarily.
      *
      * @zh
-     * 字体是否倾斜。
+     * 字体是否倾斜。暂不支持 CHAR 缓存模式。
      */
     @displayOrder(16)
     get isItalic (): boolean {
@@ -558,10 +569,10 @@ export class Label extends UIRenderer {
 
     /**
      * @en
-     * Whether the font is underline.
+     * Whether the font is underline. CHAR cache mode is not supported temporarily.
      *
      * @zh
-     * 字体是否加下划线。
+     * 字体是否加下划线。暂不支持 CHAR 缓存模式。
      */
     @displayOrder(17)
     get isUnderline (): boolean {
@@ -577,8 +588,8 @@ export class Label extends UIRenderer {
     }
 
     /**
-     * @en The height of underline.
-     * @zh 下划线高度。
+     * @en The height of underline. CHAR cache mode is not supported temporarily.
+     * @zh 下划线高度。暂不支持 CHAR 缓存模式。
      */
     @visible(function (this: Label) { return this._isUnderline; })
     @editable
@@ -597,7 +608,7 @@ export class Label extends UIRenderer {
      ** Outline effect used to change the display, only for system fonts or TTF fonts.
      **
      ** @zh
-     ** 描边效果组件,用于字体描边,只能用于系统字体或 ttf 字体。
+     ** 描边效果组件，用于字体描边，只能用于系统字体或 ttf 字体。
      **/
     @editable
     @visible(function (this: Label) { return !(this._font instanceof BitmapFont); })
@@ -723,28 +734,36 @@ export class Label extends UIRenderer {
     }
 
     /**
-     * @deprecated since v3.7.0, this is an engine private interface that will be removed in the future.
+     * @en Label component used character texture.
+     * 
+     * @zh Label 组件使用的字符纹理
      */
     get spriteFrame (): SpriteFrame | LetterRenderTexture | null {
         return this._texture;
     }
 
     /**
-     * @deprecated since v3.7.0, this is an engine private interface that will be removed in the future.
+     * @en Character textures when using TTF fonts
+     * 
+     * @zn 使用 TTF 字体时的字符纹理
      */
     get ttfSpriteFrame (): SpriteFrame | null {
         return this._ttfSpriteFrame;
     }
 
     /**
-     * @deprecated since v3.7.0, this is an engine private interface that will be removed in the future.
+     * @en The canvas element and context object used by the Label component
+     * 
+     * @zn Label 组件使用的 canvas element 和 context 对象
      */
     get assemblerData (): ISharedLabelData | null {
         return this._assemblerData;
     }
 
     /**
-     * @deprecated since v3.7.0, this is an engine private interface that will be removed in the future.
+     * @en Character texture atlas used by the Label component
+     * 
+     * @zn Label 组件使用的字符纹理图集
      */
     get fontAtlas (): FontAtlas | null {
         return this._fontAtlas;
