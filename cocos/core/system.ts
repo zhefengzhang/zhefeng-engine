@@ -65,14 +65,14 @@ export class System implements ISchedulable {
      * @protected
      */
     protected _id = '';
-    
+
     /**
      * @en Execution priority of this system. Higher values execute first.
      * @zh 此系统的执行优先级。数值越高越先执行。
      * @protected
      */
     protected _priority = 0;
-    
+
     /**
      * @en Whether this system should execute in edit mode.
      * @zh 此系统是否应在编辑模式下执行。
@@ -88,7 +88,7 @@ export class System implements ISchedulable {
     set priority (value: number) {
         this._priority = value;
     }
-    
+
     /**
      * @en Get the execution priority of this system.
      * @zh 获取此系统的执行优先级。
@@ -106,7 +106,7 @@ export class System implements ISchedulable {
     set id (id: string) {
         this._id = id;
     }
-    
+
     /**
      * @en Get the unique identifier of this system.
      * @zh 获取此系统的唯一标识符。
