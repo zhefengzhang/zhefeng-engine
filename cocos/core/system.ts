@@ -135,29 +135,29 @@ export class System implements ISchedulable {
     }
 
     /**
-     * @en Initialize the system. Called by Director when the system is registered. Override this method to implement custom initialization logic.
-     * @zh 初始化系统。当系统被注册时由 Director 调用。重写此方法以实现自定义初始化逻辑。
+     * @en Initialize the system. Called by Director when the system is registered.
+     * @zh 初始化系统。当系统被注册时由 Director 调用。
      * @virtual
      */
     init (): void {}
     /**
-     * @en Update function called every frame between component update and late update phases. Override to implement per-frame logic.
-     * @zh 每帧调用的更新函数，在组件 update 和 lateUpdate 阶段之间执行。重写以实现每帧逻辑。
+     * @en Update function called every frame between component update and late update phases.
+     * @zh 每帧调用的更新函数，在组件 update 和 lateUpdate 阶段之间执行。
      * @param dt - Delta time in seconds since the last frame
      * @virtual
      */
     update (dt: number): void {}
     /**
-     * @en Post-update function called after all components' late update phase and before rendering. Override to implement post-processing logic.
-     * @zh 后更新函数，在所有组件的 lateUpdate 阶段之后、渲染之前调用。重写以实现后处理逻辑。
+     * @en Post-update function called after all components' late update phase and before rendering.
+     * @zh 后更新函数，在所有组件的 lateUpdate 阶段之后、渲染之前调用。
      * @param dt - Delta time in seconds since the last frame
      * @virtual
      */
     postUpdate (dt: number): void {}
 
     /**
-     * @en Cleanup function called when the system is being destroyed. Override to implement custom cleanup logic.
-     * @zh 系统销毁时调用的清理函数。重写以实现自定义清理逻辑。
+     * @en Cleanup function called when the system is being destroyed.
+     * @zh 系统销毁时调用的清理函数。
      * @virtual
      */
     destroy (): void {}
