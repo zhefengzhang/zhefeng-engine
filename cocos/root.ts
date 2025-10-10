@@ -41,7 +41,7 @@ import { Batcher2D } from './2d/renderer/batcher-2d';
 import { IPipelineEvent, PipelineEventProcessor } from './rendering/pipeline-event';
 import {
     localDescriptorSetLayout_ResizeMaxJoints, UBOCameraEnum, UBOGlobalEnum,
-    UBOLocalEnum, UBOShadowEnum, UBOWorldBound
+    UBOLocalEnum, UBOShadowEnum, UBOWorldBound,
 } from './rendering/define';
 import { XREye, XRPoseType } from './xr/xr-enums';
 import { ICustomJointTextureLayout } from './3d/skeletal-animation/skeletal-animation-utils';
@@ -817,7 +817,7 @@ export class Root {
         // TODO: usedUBOVectorCount should be estimated more carefully, the UBOs used could vary in different scenes.
         const usedUBOVectorCount = Math.max(
             (UBOGlobalEnum.COUNT + UBOCameraEnum.COUNT + UBOShadowEnum.COUNT + UBOLocalEnum.COUNT + UBOWorldBound.COUNT) / 4,
-            100
+            100,
         );
         let maxJoints = Math.floor((deviceManager.gfxDevice.capabilities.maxVertexUniformVectors - usedUBOVectorCount) / 3);
         maxJoints = maxJoints < 256 ? maxJoints : 256;
