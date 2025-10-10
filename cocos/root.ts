@@ -39,22 +39,25 @@ import { ColorAttachment, DepthStencilAttachment, RenderPassInfo, StoreOp, Devic
 import { BasicPipeline, PipelineRuntime } from './rendering/custom/pipeline';
 import { Batcher2D } from './2d/renderer/batcher-2d';
 import { IPipelineEvent, PipelineEventProcessor } from './rendering/pipeline-event';
-import { localDescriptorSetLayout_ResizeMaxJoints, UBOCameraEnum, UBOGlobalEnum, UBOLocalEnum, UBOShadowEnum, UBOWorldBound } from './rendering/define';
+import {
+    localDescriptorSetLayout_ResizeMaxJoints, UBOCameraEnum, UBOGlobalEnum,
+    UBOLocalEnum, UBOShadowEnum, UBOWorldBound
+} from './rendering/define';
 import { XREye, XRPoseType } from './xr/xr-enums';
 import { ICustomJointTextureLayout } from './3d/skeletal-animation/skeletal-animation-utils';
 import { getPipelineSceneData } from './rendering/pipeline-scene-data-utils';
 
 /**
- * @en Initialization information for the Root
- * @zh Root 初始化描述信息
+ * @en Configuration information for initializing the Root system
+ * @zh Root 系统初始化配置信息
  */
 export interface IRootInfo {
     enableHDR?: boolean;
 }
 
 /**
- * @en Creation information for the Root
- * @zh 场景创建描述信息
+ * @en Configuration information for creating a scene
+ * @zh 场景创建配置信息
  */
 export interface ISceneInfo {
     name: string;
@@ -94,7 +97,7 @@ export class Root {
     }
 
     /**
-     * @e The temporary window for data transmission
+     * @en The temporary window for data transmission
      * @zh 临时窗口（用于数据传输）
      * @internal
      */
@@ -115,8 +118,8 @@ export class Root {
     }
 
     /**
-     * @zh
-     * 启用自定义渲染管线
+     * @en Whether to use custom render pipeline
+     * @zh 启用自定义渲染管线
      */
     public get usesCustomPipeline (): boolean {
         return this._usesCustomPipeline;
@@ -231,6 +234,10 @@ export class Root {
         return this._useDeferredPipeline;
     }
 
+    /**
+     * @en The list of all cameras in the render system
+     * @zh 渲染系统中所有相机的列表
+     */
     public get cameraList (): Camera[] {
         return this._cameraList;
     }
@@ -345,11 +352,11 @@ export class Root {
     }
 
     /**
-     * @en Resize the on-screen render windows.
-     * @zh 重置在屏窗口的大小。
-     * @param width The new width of the window.
-     * @param height The new height of the window.
-     * @param windowId The system window ID, optional for now.
+     * @en Resize the on-screen render windows to new dimensions
+     * @zh 调整屏幕渲染窗口的尺寸
+     * @param width The new width of the window in pixels
+     * @param height The new height of the window in pixels
+     * @param windowId The system window ID, optional parameter
      */
     public resize (width: number, height: number, windowId?: number): void {
         this._windows.forEach((window) => {
@@ -362,7 +369,7 @@ export class Root {
     /**
      * @en Setup the render pipeline
      * @zh 设置渲染管线
-     * @param rppl The render pipeline
+     * @param useCustomPipeline Whether to use custom pipeline, if false will use legacy pipeline
      * @returns The setup is successful or not
      */
     public setRenderPipeline (useCustomPipeline?: boolean): boolean {
@@ -444,8 +451,8 @@ export class Root {
     }
 
     /**
-     * @en Active the render window as the [[curWindow]]
-     * @zh 激活指定窗口为当前窗口 [[curWindow]]
+     * @en Activate the specified render window as the current active window
+     * @zh 激活指定的渲染窗口为当前活动窗口
      * @param window The render window to be activated
      */
     public activeWindow (window: RenderWindow): void {
@@ -808,7 +815,10 @@ export class Root {
 
     private _resizeMaxJointForDS (): void {
         // TODO: usedUBOVectorCount should be estimated more carefully, the UBOs used could vary in different scenes.
-        const usedUBOVectorCount = Math.max((UBOGlobalEnum.COUNT + UBOCameraEnum.COUNT + UBOShadowEnum.COUNT + UBOLocalEnum.COUNT + UBOWorldBound.COUNT) / 4, 100);
+        const usedUBOVectorCount = Math.max(
+            (UBOGlobalEnum.COUNT + UBOCameraEnum.COUNT + UBOShadowEnum.COUNT + UBOLocalEnum.COUNT + UBOWorldBound.COUNT) / 4,
+            100
+        );
         let maxJoints = Math.floor((deviceManager.gfxDevice.capabilities.maxVertexUniformVectors - usedUBOVectorCount) / 3);
         maxJoints = maxJoints < 256 ? maxJoints : 256;
         localDescriptorSetLayout_ResizeMaxJoints(maxJoints);
