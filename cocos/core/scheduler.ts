@@ -33,20 +33,98 @@ const MAX_POOL_SIZE = 20;
 
 const idGenerator = new IDGenerator('Scheduler');
 
+/**
+ * @en Interface for objects that can be scheduled by the Scheduler.
+ * This interface defines the contract for objects that need to be managed by the Scheduler system.
+ * Objects implementing this interface can receive regular update calls and timer-based callbacks.
+ *
+ * @zh 可以被 Scheduler 调度的对象接口。
+ * 此接口定义了需要被调度器系统管理的对象的契约。
+ * 实现此接口的对象可以接收定期的更新调用和基于定时器的回调。
+ *
+ * @example
+ * ```typescript
+ * class MyComponent implements ISchedulable {
+ *     id: string = 'my-component';
+ *
+ *     update(dt: number): void {
+ *         // Update logic here
+ *     }
+ * }
+ * ```
+ */
 export interface ISchedulable {
+    /**
+     * @en Unique identifier for the schedulable object.
+     * This ID is used by the Scheduler to track and manage the object.
+     * If not provided, the Scheduler will automatically generate one.
+     *
+     * @zh 可调度对象的唯一标识符。
+     * 此 ID 被调度器用来跟踪和管理对象。
+     * 如果未提供，调度器将自动生成一个。
+     */
     id?: string;
+
+    /**
+     * @en UUID for the schedulable object.
+     * Alternative unique identifier that can be used instead of or alongside the id.
+     * Commonly used for objects that already have a UUID from other systems.
+     *
+     * @zh 可调度对象的 UUID。
+     * 可以代替或与 id 一起使用的替代唯一标识符。
+     * 通常用于已经从其他系统获得 UUID 的对象。
+     */
     uuid?: string;
-    update? (dt: number): void;
+
+    /**
+     * @en Update method called by the scheduler every frame.
+     * This method is invoked during the scheduler's update cycle to allow
+     * the object to perform per-frame logic updates.
+     *
+     * @zh 由调度器每帧调用的更新方法。
+     * 此方法在调度器的更新周期中被调用，允许对象执行每帧的逻辑更新。
+     *
+     * @param dt
+     * @en Delta time in seconds since the last frame.
+     * This value represents the time elapsed and can be used for time-based calculations.
+     *
+     * @zh 自上一帧以来的增量时间（以秒为单位）。
+     * 此值表示经过的时间，可用于基于时间的计算。
+     */
+    update?(dt: number): void;
 }
 
 // data structures
 /**
- * @en A list double-linked list used for "updates with priority".
- * @zh 用于“优先更新”的列表。
+ * @en A list entry used for "updates with priority".
+ * This class represents an entry in the scheduler's priority-based update lists.
+ * It manages objects that need to receive update calls every frame with specific priority ordering.
+ * Uses object pooling pattern for optimal memory management and performance.
+ *
+ * @zh 用于"优先更新"的列表条目。
+ * 此类表示调度器基于优先级的更新列表中的一个条目。
+ * 它管理需要以特定优先级顺序每帧接收更新调用的对象。
+ * 使用对象池模式以实现最佳的内存管理和性能。
+ *
  * @class ListEntry
  * @mangle
  */
 class ListEntry {
+    /**
+     * @en Get a ListEntry instance from the object pool.
+     * Retrieves a recycled instance if available, otherwise creates a new one.
+     * This method helps reduce garbage collection by reusing objects.
+     *
+     * @zh 从对象池中获取 ListEntry 实例。
+     * 如果可用则检索回收的实例，否则创建新实例。
+     * 此方法通过重用对象来帮助减少垃圾回收。
+     *
+     * @param target The schedulable object to associate with this entry
+     * @param priority The priority value for execution order (lower values execute first)
+     * @param paused Whether this entry should be paused initially
+     * @param markedForDeletion Whether this entry is marked for deletion
+     * @returns A configured ListEntry instance ready for use
+     */
     public static get (target: ISchedulable, priority: number, paused: boolean, markedForDeletion: boolean): ListEntry {
         let result = ListEntry._listEntries.pop();
         if (result) {
@@ -60,6 +138,17 @@ class ListEntry {
         return result;
     }
 
+    /**
+     * @en Return a ListEntry instance to the object pool for reuse.
+     * Cleans up the entry and adds it back to the pool if there's space.
+     * This helps maintain a pool of reusable objects to reduce memory allocation.
+     *
+     * @zh 将 ListEntry 实例返回到对象池以供重用。
+     * 清理条目并在有空间时将其添加回池中。
+     * 这有助于维护可重用对象池以减少内存分配。
+     *
+     * @param entry The ListEntry instance to return to the pool
+     */
     public static put (entry: ListEntry): void {
         if (ListEntry._listEntries.length < MAX_POOL_SIZE) {
             entry.target = null;
@@ -67,28 +156,84 @@ class ListEntry {
         }
     }
 
+    /**
+     * @en Object pool for ListEntry instances to minimize garbage collection.
+     * @zh ListEntry 实例的对象池，用于最小化垃圾回收。
+     */
     private static _listEntries: ListEntry[] = [];
 
+    /**
+     * @en The schedulable object that will receive update calls.
+     * This object must implement the ISchedulable interface to be managed by the scheduler.
+     *
+     * @zh 将接收更新调用的可调度对象。
+     * 此对象必须实现 ISchedulable 接口才能被调度器管理。
+     */
     public target: ISchedulable | null;
+
+    /**
+     * @en Priority value determining the order of execution.
+     * Lower values execute first: negative priority < 0 priority < positive priority.
+     * This allows fine-grained control over update order.
+     *
+     * @zh 决定执行顺序的优先级值。
+     * 较低的值先执行：负优先级 < 0优先级 < 正优先级。
+     * 这允许对更新顺序进行细粒度控制。
+     */
     public priority: number;
+
+    /**
+     * @en Whether this entry is currently paused and should skip updates.
+     * When paused, the target's update method will not be called.
+     *
+     * @zh 此条目当前是否已暂停并应跳过更新。
+     * 暂停时，目标的更新方法将不会被调用。
+     */
     public paused: boolean;
+
+    /**
+     * @en Whether this entry is marked for deletion and should be removed.
+     * When marked for deletion, the entry will be removed at the end of the current update cycle.
+     *
+     * @zh 此条目是否标记为删除并应被移除。
+     * 标记为删除时，条目将在当前更新周期结束时被移除。
+     */
     public markedForDeletion: boolean;
 
     /**
-     * @en The constructor of ListEntry.
-     * @zh ListEntry 的构造函数。
+     * @en Creates a new ListEntry instance.
+     * Initializes all properties with the provided values to create a fully configured entry.
+     *
+     * @zh 创建新的 ListEntry 实例。
+     * 使用提供的值初始化所有属性以创建完全配置的条目。
+     *
      * @param target
-     * @en Target object, which is ISchedulable type, retained by hashUpdateEntry.
-     * @zh 目标对象, 为ISchedulable类型. 被hashUpdateEntry持有。
+     * @en Target object that implements ISchedulable interface.
+     * This object will receive update calls from the scheduler.
+     *
+     * @zh 实现 ISchedulable 接口的目标对象。
+     * 此对象将从调度器接收更新调用。
+     *
      * @param priority
-     * @en The priority.
-     * @zh 优先级。
+     * @en The execution priority for this entry.
+     * Lower values execute before higher values.
+     *
+     * @zh 此条目的执行优先级。
+     * 较低的值在较高的值之前执行。
+     *
      * @param paused
-     * @en Whether is paused.
-     * @zh 是否被暂停。
+     * @en Whether this entry should start in a paused state.
+     * Paused entries skip update calls until resumed.
+     *
+     * @zh 此条目是否应以暂停状态开始。
+     * 暂停的条目跳过更新调用直到恢复。
+     *
      * @param markedForDeletion
-     * @en Mark for deletion. if true, selector will no longer be called and entry will be removed at end of the next tick.
-     * @zh 删除标记, 当为true时, selector 将不再被调用，并且entry将在下一个tick结束时被删除。
+     * @en Whether this entry is marked for deletion.
+     * Marked entries will be removed at the end of the next update cycle.
+     *
+     * @zh 此条目是否标记为删除。
+     * 标记的条目将在下一个更新周期结束时被移除。
      */
     constructor (target: ISchedulable, priority: number, paused: boolean, markedForDeletion: boolean) {
         this.target = target;
@@ -99,16 +244,53 @@ class ListEntry {
 }
 
 /**
- * @en The update entry list.
- * @zh 更新条目列表。
- * @class HashUpdateEntry
- * @param list @en Which list does it belong to. @zh 所属的列表。
- * @param entry @en Entry in the list. @zh 所述的条目。
- * @param target @en Hash key (retained). @zh 哈希键所对应的目标(被持有的)。
- * @param callback @en The callback function. @zh 所回调的函数。
+ * @en Hash table entry for managing update callbacks with different priorities.
+ * This class organizes multiple update entries for a single target, allowing
+ * efficient management of callbacks with different priorities for the same object.
+ * Uses object pooling pattern for memory efficiency.
+ *
+ * @zh 用于管理不同优先级更新回调的哈希表条目。
+ * 此类为单个目标组织多个更新条目，允许
+ * 高效管理同一对象的不同优先级回调。
+ * 使用对象池模式以提高内存效率。
+ *
+ * @example
+ * ```typescript
+ * // Internal usage by Scheduler
+ * const entry = HashUpdateEntry.get(listArray, listEntry, target, callback);
+ * // ... use entry
+ * HashUpdateEntry.put(entry); // Return to pool
+ * ```
  * @mangle
  */
 class HashUpdateEntry {
+    /**
+     * @en Retrieves a HashUpdateEntry instance from the object pool or creates a new one.
+     * This method implements the object pool pattern to reduce memory allocation overhead.
+     *
+     * @zh 从对象池中检索 HashUpdateEntry 实例或创建新实例。
+     * 此方法实现对象池模式以减少内存分配开销。
+     *
+     * @param list
+     * @en The list of entries that this hash entry belongs to.
+     * @zh 此哈希条目所属的条目列表。
+     *
+     * @param entry
+     * @en The specific list entry being managed.
+     * @zh 正在管理的特定列表条目。
+     *
+     * @param target
+     * @en The schedulable target object (used as hash key).
+     * @zh 可调度的目标对象（用作哈希键）。
+     *
+     * @param callback
+     * @en The callback function to be executed.
+     * @zh 要执行的回调函数。
+     *
+     * @returns
+     * @en A configured HashUpdateEntry instance ready for use.
+     * @zh 配置好的可使用的 HashUpdateEntry 实例。
+     */
     public static get (list: ListEntry[], entry: ListEntry, target: ISchedulable, callback: AnyFunction | null): HashUpdateEntry {
         let result = HashUpdateEntry._hashUpdateEntries.pop();
         if (result) {
@@ -122,6 +304,17 @@ class HashUpdateEntry {
         return result;
     }
 
+    /**
+     * @en Returns a HashUpdateEntry instance to the object pool for reuse.
+     * Clears all references to prevent memory leaks before pooling.
+     *
+     * @zh 将 HashUpdateEntry 实例返回到对象池以供重用。
+     * 在池化之前清除所有引用以防止内存泄漏。
+     *
+     * @param entry
+     * @en The HashUpdateEntry instance to return to the pool.
+     * @zh 要返回到池中的 HashUpdateEntry 实例。
+     */
     public static put (entry: HashUpdateEntry): void {
         if (HashUpdateEntry._hashUpdateEntries.length < MAX_POOL_SIZE) {
             entry.list = entry.entry = entry.target = entry.callback = null;
@@ -129,13 +322,74 @@ class HashUpdateEntry {
         }
     }
 
+    /**
+     * @en Object pool for HashUpdateEntry instances to reduce memory allocation.
+     * Maintains a pool of reusable instances for better performance.
+     *
+     * @zh HashUpdateEntry 实例的对象池，用于减少内存分配。
+     * 维护可重用实例池以获得更好的性能。
+     */
     private static _hashUpdateEntries: HashUpdateEntry[] = [];
 
+    /**
+     * @en The list of entries that this hash entry belongs to.
+     * Contains all ListEntry objects for the same target with different priorities.
+     *
+     * @zh 此哈希条目所属的条目列表。
+     * 包含同一目标的所有不同优先级的 ListEntry 对象。
+     */
     public list: ListEntry[] | null;
+
+    /**
+     * @en The specific list entry being managed by this hash entry.
+     * Points to the current entry being processed during updates.
+     *
+     * @zh 此哈希条目管理的特定列表条目。
+     * 指向更新期间正在处理的当前条目。
+     */
     public entry: ListEntry | null;
+
+    /**
+     * @en The schedulable target object (used as hash key).
+     * This object implements ISchedulable and receives update calls.
+     *
+     * @zh 可调度的目标对象（用作哈希键）。
+     * 此对象实现 ISchedulable 并接收更新调用。
+     */
     public target: ISchedulable | null;
+
+    /**
+     * @en The callback function to be executed during updates.
+     * This function is called when the scheduler processes this entry.
+     *
+     * @zh 更新期间要执行的回调函数。
+     * 当调度器处理此条目时调用此函数。
+     */
     public callback: AnyFunction | null;
 
+    /**
+     * @en Creates a new HashUpdateEntry instance.
+     * Initializes all properties with the provided values for immediate use.
+     *
+     * @zh 创建新的 HashUpdateEntry 实例。
+     * 使用提供的值初始化所有属性以供立即使用。
+     *
+     * @param list
+     * @en The list of entries that this hash entry will belong to.
+     * @zh 此哈希条目将属于的条目列表。
+     *
+     * @param entry
+     * @en The specific list entry to be managed.
+     * @zh 要管理的特定列表条目。
+     *
+     * @param target
+     * @en The schedulable target object.
+     * @zh 可调度的目标对象。
+     *
+     * @param callback
+     * @en The callback function to execute.
+     * @zh 要执行的回调函数。
+     */
     constructor (list: ListEntry[], entry: ListEntry, target: ISchedulable, callback: AnyFunction | null) {
         this.list = list;
         this.entry = entry;
@@ -155,7 +409,41 @@ class HashUpdateEntry {
  * @param paused
  * @mangle
  */
+/**
+ * @en Hash table entry for managing timer-based callbacks with intervals.
+ * This class organizes timer callbacks for scheduled functions that execute
+ * at specific intervals, providing efficient management of timed operations.
+ * Uses object pooling pattern for memory efficiency.
+ *
+ * @zh 用于管理基于定时器的间隔回调的哈希表条目。
+ * 此类为按特定间隔执行的调度函数组织定时器回调，
+ * 提供定时操作的高效管理。
+ * 使用对象池模式以提高内存效率。
+ *
+ * @example
+ * ```typescript
+ * // Internal usage by Scheduler
+ * const entry = HashTimerEntry.get(timers, target, 0, null, false, false);
+ * // ... use entry
+ * HashTimerEntry.put(entry); // Return to pool
+ * ```
+ * @mangle
+ */
 class HashTimerEntry {
+    /**
+     * @en Get a HashTimerEntry instance from the object pool or create a new one.
+     * This method implements the object pool pattern for memory efficiency.
+     * @zh 从对象池中获取HashTimerEntry实例或创建新实例。
+     * 此方法实现对象池模式以提高内存效率。
+     *
+     * @param timers - Array of callback timers / 回调定时器数组
+     * @param target - The target object (hash key, retained) / 目标对象（哈希键，保留）
+     * @param timerIndex - Index of the current timer / 当前定时器的索引
+     * @param currentTimer - Current active timer / 当前活动定时器
+     * @param currentTimerSalvaged - Whether current timer is salvaged / 当前定时器是否已被拯救
+     * @param paused - Whether the entry is paused / 条目是否暂停
+     * @returns A HashTimerEntry instance / HashTimerEntry实例
+     */
     public static get (timers: CallbackTimer[] | null, target: ISchedulable, timerIndex: number, currentTimer: CallbackTimer | null, currentTimerSalvaged: boolean, paused: boolean): HashTimerEntry {
         let result = HashTimerEntry._hashTimerEntries.pop();
         if (result) {
@@ -171,6 +459,14 @@ class HashTimerEntry {
         return result;
     }
 
+    /**
+     * @en Return a HashTimerEntry instance to the object pool for reuse.
+     * This method cleans up the entry and adds it back to the pool if there's space.
+     * @zh 将HashTimerEntry实例返回到对象池以供重用。
+     * 此方法清理条目并在有空间时将其添加回池中。
+     *
+     * @param entry - The HashTimerEntry instance to return / 要返回的HashTimerEntry实例
+     */
     public static put (entry: HashTimerEntry): void {
         if (HashTimerEntry._hashTimerEntries.length < MAX_POOL_SIZE) {
             entry.timers = entry.target = entry.currentTimer = null;
@@ -178,15 +474,62 @@ class HashTimerEntry {
         }
     }
 
+    /**
+     * @en Object pool for HashTimerEntry instances to reduce memory allocation.
+     * @zh HashTimerEntry实例的对象池，用于减少内存分配。
+     * @private
+     */
     private static _hashTimerEntries: HashTimerEntry[] = [];
 
+    /**
+     * @en Array of callback timers associated with this entry.
+     * @zh 与此条目关联的回调定时器数组。
+     */
     public timers: CallbackTimer[] | null;
+
+    /**
+     * @en The target object that owns the timers (used as hash key).
+     * @zh 拥有定时器的目标对象（用作哈希键）。
+     */
     public target: ISchedulable | null;
+
+    /**
+     * @en Index of the current timer in the timers array.
+     * @zh 定时器数组中当前定时器的索引。
+     */
     public timerIndex: number;
+
+    /**
+     * @en Reference to the currently active timer.
+     * @zh 当前活动定时器的引用。
+     */
     public currentTimer: CallbackTimer | null;
+
+    /**
+     * @en Flag indicating whether the current timer has been salvaged during iteration.
+     * @zh 标志，指示当前定时器在迭代期间是否已被拯救。
+     */
     public currentTimerSalvaged: boolean;
+
+    /**
+     * @en Flag indicating whether this timer entry is paused.
+     * @zh 标志，指示此定时器条目是否暂停。
+     */
     public paused: boolean;
 
+    /**
+     * @en Constructor for HashTimerEntry.
+     * Initializes a new timer entry with the provided parameters.
+     * @zh HashTimerEntry的构造函数。
+     * 使用提供的参数初始化新的定时器条目。
+     *
+     * @param timers - Array of callback timers / 回调定时器数组
+     * @param target - The target object / 目标对象
+     * @param timerIndex - Index of the current timer / 当前定时器的索引
+     * @param currentTimer - Current active timer / 当前活动定时器
+     * @param currentTimerSalvaged - Whether current timer is salvaged / 当前定时器是否已被拯救
+     * @param paused - Whether the entry is paused / 条目是否暂停
+     */
     constructor (timers: CallbackTimer[] | null, target: ISchedulable, timerIndex: number, currentTimer: CallbackTimer | null, currentTimerSalvaged: boolean, paused: boolean) {
         this.timers = timers;
         this.target = target;
@@ -200,12 +543,43 @@ class HashTimerEntry {
 type CallbackType = (dt?: number) => void;
 
 /**
- * Light weight timer
+ * @en Lightweight timer class for managing scheduled callbacks with intervals and delays.
+ * This class provides efficient timer functionality with object pooling for memory optimization.
+ * Supports both repeating and one-time callbacks with customizable intervals and delays.
+ *
+ * @zh 用于管理带间隔和延迟的调度回调的轻量级定时器类。
+ * 此类提供高效的定时器功能，并使用对象池进行内存优化。
+ * 支持可自定义间隔和延迟的重复和一次性回调。
+ *
+ * @example
+ * ```typescript
+ * const timer = CallbackTimer.get();
+ * timer.initWithCallback(scheduler, callback, target, 1.0, 5, 0.5);
+ * // Timer will execute callback 5 times with 1 second interval after 0.5 second delay
+ * ```
  * @mangle
  */
 class CallbackTimer {
+    /**
+     * @en Object pool for CallbackTimer instances to reduce memory allocation.
+     * @zh CallbackTimer实例的对象池，用于减少内存分配。
+     */
     public static _timers: CallbackTimer[] = [];
+
+    /**
+     * @en Get a CallbackTimer instance from the object pool or create a new one.
+     * @zh 从对象池中获取CallbackTimer实例或创建新实例。
+     * @returns A CallbackTimer instance / CallbackTimer实例
+     */
     public static get (): CallbackTimer { return CallbackTimer._timers.pop() || new CallbackTimer(); }
+
+    /**
+     * @en Return a CallbackTimer instance to the object pool for reuse.
+     * Only returns to pool if not locked and pool has space.
+     * @zh 将CallbackTimer实例返回到对象池以供重用。
+     * 仅在未锁定且池有空间时返回到池中。
+     * @param timer - The CallbackTimer instance to return / 要返回的CallbackTimer实例
+     */
     public static put (timer: CallbackTimer): void {
         if (CallbackTimer._timers.length < MAX_POOL_SIZE && !timer._lock) {
             timer._scheduler = timer._target = timer._callback = null;
@@ -213,18 +587,89 @@ class CallbackTimer {
         }
     }
 
+    /**
+     * @en Lock flag to prevent timer from being returned to pool during execution.
+     * @zh 锁定标志，防止定时器在执行期间被返回到池中。
+     * @private
+     */
     private _lock: boolean;
+
+    /**
+     * @en Reference to the scheduler that manages this timer.
+     * @zh 管理此定时器的调度器引用。
+     * @private
+     */
     private _scheduler: Scheduler | null;
+
+    /**
+     * @en Elapsed time since timer started or last execution.
+     * @zh 自定时器启动或上次执行以来的经过时间。
+     * @private
+     */
     private _elapsed: number;
+
+    /**
+     * @en Flag indicating whether timer should run forever.
+     * @zh 标志，指示定时器是否应永远运行。
+     * @private
+     */
     private _runForever: boolean;
+
+    /**
+     * @en Flag indicating whether timer should use initial delay.
+     * @zh 标志，指示定时器是否应使用初始延迟。
+     * @private
+     */
     private _useDelay: boolean;
+
+    /**
+     * @en Number of times the timer has been executed.
+     * @zh 定时器已执行的次数。
+     * @private
+     */
     private _timesExecuted: number;
+
+    /**
+     * @en Number of times the timer should repeat (excluding initial execution).
+     * @zh 定时器应重复的次数（不包括初始执行）。
+     * @private
+     */
     private _repeat: number;
+
+    /**
+     * @en Initial delay before first execution in seconds.
+     * @zh 首次执行前的初始延迟（秒）。
+     * @private
+     */
     private _delay: number;
+
+    /**
+     * @en Interval between executions in seconds.
+     * @zh 执行间隔（秒）。
+     * @private
+     */
     private _interval: number;
+
+    /**
+     * @en Target object that owns this timer.
+     * @zh 拥有此定时器的目标对象。
+     * @private
+     */
     private _target: ISchedulable | null;
+
+    /**
+     * @en Callback function to execute when timer triggers.
+     * @zh 定时器触发时要执行的回调函数。
+     * @private
+     */
     private _callback?: CallbackType | null;
 
+    /**
+     * @en Constructor for CallbackTimer.
+     * Initializes all timer properties to their default values.
+     * @zh CallbackTimer的构造函数。
+     * 将所有定时器属性初始化为默认值。
+     */
     constructor () {
         this._lock = false;
         this._scheduler = null;
@@ -239,6 +684,20 @@ class CallbackTimer {
         this._target = null;
     }
 
+    /**
+     * @en Initialize the timer with callback function and scheduling parameters.
+     * This method sets up the timer for execution with specified interval, repeat count, and delay.
+     * @zh 使用回调函数和调度参数初始化定时器。
+     * 此方法设置定时器以指定的间隔、重复次数和延迟执行。
+     *
+     * @param scheduler - The scheduler that manages this timer / 管理此定时器的调度器
+     * @param callback - The callback function to execute / 要执行的回调函数
+     * @param target - The target object for the callback / 回调的目标对象
+     * @param seconds - Interval between executions in seconds / 执行间隔（秒）
+     * @param repeat - Number of times to repeat (use legacyCC.macro.REPEAT_FOREVER for infinite) / 重复次数（使用legacyCC.macro.REPEAT_FOREVER表示无限）
+     * @param delay - Initial delay before first execution in seconds / 首次执行前的初始延迟（秒）
+     * @returns Always returns true / 总是返回true
+     */
     public initWithCallback (scheduler: Scheduler, callback: CallbackType, target: ISchedulable, seconds: number, repeat: number, delay: number): boolean {
         this._lock = false;
         this._scheduler = scheduler;
@@ -313,10 +772,23 @@ class CallbackTimer {
         }
     }
 
+    /**
+     * @en Get the callback function associated with this timer.
+     * @zh 获取与此定时器关联的回调函数。
+     * @returns The callback function or null/undefined if not set / 回调函数，如果未设置则为null/undefined
+     */
     public getCallback (): CallbackType | null | undefined {
         return this._callback;
     }
 
+    /**
+     * @en Trigger the timer's callback function.
+     * This method executes the callback with the target object and elapsed time.
+     * Sets lock during execution to prevent pool return.
+     * @zh 触发定时器的回调函数。
+     * 此方法使用目标对象和经过时间执行回调。
+     * 在执行期间设置锁定以防止返回池。
+     */
     public trigger (): void {
         if (this._target && this._callback) {
             this._lock = true;
@@ -325,6 +797,12 @@ class CallbackTimer {
         }
     }
 
+    /**
+     * @en Cancel the timer and unschedule it from the scheduler.
+     * This method removes the timer from the scheduler's management.
+     * @zh 取消定时器并从调度器中取消调度。
+     * 此方法从调度器的管理中移除定时器。
+     */
     public cancel (): void {
         if (this._scheduler && this._callback && this._target) {
             this._scheduler.unscheduleForTimer(this, this._target);
@@ -334,22 +812,56 @@ class CallbackTimer {
 
 /**
  * @en
- * Scheduler is responsible of triggering the scheduled callbacks.<br>
- * You should not use NSTimer. Instead use this class.<br>
- * <br>
- * There are 2 different types of callbacks (selectors):<br>
- *     - update callback: the 'update' callback will be called every frame. You can customize the priority.<br>
- *     - custom callback: A custom callback will be called every frame, or with a custom interval of time.<br>
- * <br>
- * The 'custom selectors' should be avoided when possible. It is faster,<br>
- * and consumes less memory to use the 'update callback'. *
+ * Scheduler is the core timing system responsible for triggering scheduled callbacks in the game engine.
+ * It manages two types of scheduled tasks with different execution patterns and performance characteristics.
+ *
+ * **Task Types:**
+ * - **Update callbacks**: Execute every frame with customizable priority levels (negative, zero, positive)
+ * - **Custom timers**: Execute at specified intervals or every frame with more flexible timing control
+ *
+ * **Performance Considerations:**
+ * - Update callbacks are more efficient for per-frame operations (faster execution, lower memory usage)
+ * - Custom timers provide more flexibility but have slightly higher overhead
+ * - Use update callbacks when possible for better performance
+ *
+ * **Usage Example:**
+ * ```typescript
+ * import { director } from 'cc';
+ * // Get the global scheduler
+ * const scheduler = director.getScheduler();
+ *
+ * // Schedule an update callback
+ * scheduler.scheduleUpdate(this, 0, false);
+ *
+ * // Schedule a custom timer
+ * scheduler.schedule(this.myCallback, this, 1.0, false);
+ * ```
+ *
  * @zh
- * Scheduler 是负责触发回调函数的类。<br>
- * 通常情况下，建议使用 `director.getScheduler()` 来获取系统定时器。<br>
- * 有两种不同类型的定时器：<br>
- *     - update 定时器：每一帧都会触发。您可以自定义优先级。<br>
- *     - 自定义定时器：自定义定时器可以每一帧或者自定义的时间间隔触发。<br>
- * 如果希望每帧都触发，应该使用 update 定时器，使用 update 定时器更快，而且消耗更少的内存。
+ * Scheduler 是游戏引擎的核心定时系统，负责触发调度的回调函数。
+ * 它管理两种不同执行模式和性能特征的调度任务。
+ *
+ * **任务类型：**
+ * - **Update 回调**：每帧执行，支持自定义优先级（负数、零、正数）
+ * - **自定义定时器**：按指定间隔或每帧执行，提供更灵活的时间控制
+ *
+ * **性能考虑：**
+ * - Update 回调对于每帧操作更高效（执行更快，内存使用更少）
+ * - 自定义定时器提供更多灵活性但开销略高
+ * - 尽可能使用 update 回调以获得更好的性能
+ *
+ * **使用示例：**
+ * ```typescript
+ * import { director } from 'cc';
+ * // 获取全局调度器
+ * const scheduler = director.getScheduler();
+ *
+ * // 调度 update 回调
+ * scheduler.scheduleUpdate(this, 0, false);
+ *
+ * // 调度自定义定时器
+ * scheduler.schedule(this.myCallback, this, 1.0, false);
+ * ```
  */
 export class Scheduler extends System {
     public static ID = 'scheduler';
@@ -366,13 +878,22 @@ export class Scheduler extends System {
     private _arrayForTimers: HashTimerEntry[];
 
     /**
-     * @en This method should be called for any target which needs to schedule tasks, and this method should be called before any scheduler API usage.
-     * This method will add a `id` property if it doesn't exist.
-     * @zh 任何需要用 Scheduler 管理任务的对象主体都应该调用这个方法，并且应该在调用任何 Scheduler API 之前调用这个方法。
-     * 这个方法会给对象添加一个 `id` 属性，如果这个属性不存在的话。
-     * @param target
-     * @en The target to enable, which type is ISchedulable.
-     * @zh 所作用的对象。类型为ISchedulable。
+     * @en
+     * Enables a target object for scheduler management by ensuring it has a unique identifier.
+     * This method must be called before using any scheduler APIs with the target object.
+     * It automatically assigns a unique ID if the target doesn't have 'uuid' or 'id' properties.
+     *
+     * **Important:** Call this method before scheduling any tasks for the target.
+     *
+     * @zh
+     * 为目标对象启用调度器管理，确保其具有唯一标识符。
+     * 在对目标对象使用任何调度器 API 之前必须调用此方法。
+     * 如果目标对象没有 'uuid' 或 'id' 属性，会自动分配一个唯一 ID。
+     *
+     * **重要：** 在为目标调度任何任务之前调用此方法。
+     *
+     * @param target The target object to enable for scheduling. Must implement ISchedulable interface.
+     *               要启用调度的目标对象。必须实现 ISchedulable 接口。
      */
     public static enableForTarget (target: ISchedulable): void {
         let found = false;
@@ -386,6 +907,15 @@ export class Scheduler extends System {
         }
     }
 
+    /**
+     * @en
+     * Creates a new Scheduler instance and initializes all internal data structures.
+     * Sets up priority-based update lists, hash maps for efficient lookup, and timing control variables.
+     *
+     * @zh
+     * 创建新的 Scheduler 实例并初始化所有内部数据结构。
+     * 设置基于优先级的更新列表、用于高效查找的哈希映射和时间控制变量。
+     */
     constructor () {
         super();
         this._timeScale = 1.0;
