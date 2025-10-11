@@ -90,7 +90,34 @@ export enum RenderType {
 }
 
 /**
+ * @description Device manager for graphics device initialization and management
+ * @description 图形设备管理器，负责图形设备的初始化和管理
+ * 
+ * @class DeviceManager
  * @internal
+ * 
+ * Core responsibilities:
+ * - Graphics device initialization and lifecycle management
+ * - Render type determination and device selection
+ * - Swapchain creation and management
+ * - Canvas context setup and configuration
+ * - Cross-platform graphics API abstraction
+ * - WebGL/WebGPU device creation and fallback handling
+ * 
+ * 核心职责：
+ * - 图形设备初始化和生命周期管理
+ * - 渲染类型确定和设备选择
+ * - 交换链创建和管理
+ * - Canvas上下文设置和配置
+ * - 跨平台图形API抽象
+ * - WebGL/WebGPU设备创建和回退处理
+ * 
+ * @warning This class is for internal engine use only
+ * @warning 此类仅供引擎内部使用
+ * 
+ * @see Device
+ * @see Swapchain
+ * @see RenderType
  */
 
 export class DeviceManager {
@@ -140,6 +167,51 @@ export class DeviceManager {
         return this._deviceInitialized;
     }
 
+    /**
+     * @description Initialize the graphics device and setup rendering context
+     * @description 初始化图形设备并设置渲染上下文
+     * 
+     * @method init
+     * @param {HTMLCanvasElement | null} canvas - The canvas element for rendering, null for headless mode
+     * @param {BindingMappingInfo} bindingMappingInfo - Binding mapping information for device initialization
+     * @returns {boolean | Promise<boolean>} Initialization result, Promise for async WebGPU initialization
+     * 
+     * Core functionality:
+     * - Determines optimal render type based on platform capabilities
+     * - Creates and initializes graphics device (WebGL/WebGPU/Canvas)
+     * - Sets up swapchain for frame buffer management
+     * - Handles device fallback scenarios
+     * - Configures canvas context and event handlers
+     * 
+     * 核心功能：
+     * - 根据平台能力确定最佳渲染类型
+     * - 创建并初始化图形设备（WebGL/WebGPU/Canvas）
+     * - 设置交换链进行帧缓冲管理
+     * - 处理设备回退场景
+     * - 配置Canvas上下文和事件处理器
+     * 
+     * @warning Calling this method multiple times will return early without re-initialization
+     * @warning 多次调用此方法将提前返回而不重新初始化
+     * 
+     * @throws {Error} When no suitable graphics device can be created
+     * @throws {Error} 当无法创建合适的图形设备时
+     * 
+     * @see RenderType
+     * @see Device
+     * @see Swapchain
+     * 
+     * @example
+     * ```typescript
+     * const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+     * const bindingInfo = new BindingMappingInfo();
+     * const result = deviceManager.init(canvas, bindingInfo);
+     * if (result instanceof Promise) {
+     *     result.then(success => console.log('WebGPU initialized:', success));
+     * } else {
+     *     console.log('Device initialized:', result);
+     * }
+     * ```
+     */
     public init (canvas: HTMLCanvasElement | null, bindingMappingInfo: BindingMappingInfo): boolean | Promise<boolean> {
         // Avoid setup to be called twice.
         if (this.initialized) { return true; }
