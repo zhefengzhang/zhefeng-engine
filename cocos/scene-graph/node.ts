@@ -87,26 +87,36 @@ let globalFlagChangeVersion = 0;
 let skewCompCount = 0;
 
 /**
- * @zh
- * 场景树中的基本节点，基本特性有：
- * * 具有层级关系
- * * 持有各类组件
- * * 维护空间变换（坐标、旋转、缩放）信息
- */
-
-/**
- * @en
- * Class of all entities in Cocos Creator scenes.
- * Basic functionalities include:
- * * Hierarchy management with parent and children
- * * Components management
- * * Coordinate system with position, scale, rotation in 3d space
- * @zh
- * Cocos Creator 场景中的所有节点类。
- * 基本特性有：
- * * 具有层级关系
- * * 持有各类组件
- * * 维护 3D 空间左边变换（坐标、旋转、缩放）信息
+ * @en Node - The fundamental entity class in Cocos Creator scene graph system.
+ * @zh Node - Cocos Creator 场景图系统中的基础实体类。
+ * @description Core scene graph entity with comprehensive capabilities:
+ * - **Hierarchy Management**: Parent-child relationships and tree traversal
+ * - **Component System**: Attach and manage various functional components
+ * - **Transform System**: 3D spatial transformations (position, rotation, scale)
+ * - **Event System**: Node-level event handling and propagation
+ * - **Lifecycle Management**: Activation, deactivation, and destruction
+ * - **Scene Integration**: Seamless integration with scene management
+ * @class Node
+ * @extends CCObject
+ * @implements ISchedulable, CustomSerializable
+ * @example
+ * ```ts
+ * import { Node, BoxCollider, Sprite } from 'cc';
+ * // Create a new node
+ * const node = new Node('MyNode');
+ * 
+ * // Set transform properties
+ * node.setPosition(100, 200, 0);
+ * node.setRotationFromEuler(0, 45, 0);
+ * node.setScale(2, 2, 2);
+ * 
+ * // Add components
+ * const sprite = node.addComponent(Sprite);
+ * const collider = node.addComponent(BoxCollider);
+ * 
+ * // Hierarchy management
+ * parentNode.addChild(node);
+ * ```
  */
 @ccclass('cc.Node')
 export class Node extends CCObject implements ISchedulable, CustomSerializable {
@@ -177,16 +187,26 @@ export class Node extends CCObject implements ISchedulable, CustomSerializable {
     }
 
     /**
-     * @en
-     * The local active state of this node.
-     * Note that a Node may be inactive because a parent is not active, even if this returns true.
-     * Use [[activeInHierarchy]]
-     * if you want to check if the Node is actually treated as active in the scene.
-     * @zh
-     * 当前节点的自身激活状态。
-     * 值得注意的是，一个节点的父节点如果不被激活，那么即使它自身设为激活，它仍然无法激活。
-     * 如果你想检查节点在场景中实际的激活状态可以使用 [[activeInHierarchy]]
+     * @en Local activation state of this node (independent of parent hierarchy).
+     * @zh 当前节点的本地激活状态（独立于父级层次结构）。
+     * @description Node activation behavior:
+     * - Controls whether this node participates in scene updates
+     * - Affects component lifecycle (onEnable/onDisable)
+     * - Influences rendering and collision detection
+     * - Does NOT guarantee scene-level activation (parent dependency)
+     * @property active
      * @default true
+     * @see activeInHierarchy For actual scene activation status
+     * @example
+     * ```ts
+     * // Local activation (may not affect scene if parent inactive)
+     * node.active = false; // Deactivate locally
+     * 
+     * // Check actual scene activation
+     * if (node.activeInHierarchy) {
+     *     // Node is truly active in scene
+     * }
+     * ```
      */
     @editable
     get active (): boolean {
@@ -225,9 +245,26 @@ export class Node extends CCObject implements ISchedulable, CustomSerializable {
     }
 
     /**
-      * @en The parent node
-      * @zh 父节点
-      */
+     * @en Parent node in the scene hierarchy.
+     * @zh 场景层次结构中的父节点。
+     * @description Parent-child relationship management:
+     * - Determines transform inheritance and coordinate space
+     * - Controls activation propagation from parent to children
+     * - Affects rendering order and scene traversal
+     * - Null indicates root-level node or detached node
+     * @property parent
+     * @see setParent For safe parent assignment with validation
+     * @example
+     * ```ts
+     * // Check if node has parent
+     * if (node.parent) {
+     *     console.log('Parent name:', node.parent.name);
+     * }
+     * 
+     * // Set parent safely
+     * node.setParent(newParent);
+     * ```
+     */
     @editable
     get parent (): Node | null {
         return this._parent;
@@ -846,17 +883,28 @@ export class Node extends CCObject implements ISchedulable, CustomSerializable {
     // COMPONENT
 
     /**
-     * @en
-     * Returns the component of supplied type if the node has one attached, null if it doesn't.
-     * You can also get component in the node by passing in the name of the script.
-     * @zh
-     * 获取节点上指定类型的组件，如果节点有附加指定类型的组件，则返回，如果没有则为空。
-     * 传入参数也可以是脚本的名称。
-     * @param classConstructor The class of the target component
+     * @en Retrieves the first component of the specified type attached to this node.
+     * @zh 获取节点上指定类型的第一个组件实例。
+     * @description Component retrieval behavior:
+     * - Returns the first matching component instance or null if not found
+     * - Supports both constructor-based and string-based component lookup
+     * - Only searches components directly attached to this node (not children)
+     * - Commonly used for accessing functional components like renderers, colliders
+     * @method getComponent
+     * @param classConstructor The constructor class of the target component
+     * @returns The component instance or null if not found
+     * @see getComponents For retrieving all components of a type
+     * @see getComponentInChildren For recursive component search
      * @example
-     * ```
-     * // get sprite component.
-     * var sprite = node.getComponent(Sprite);
+     * ```ts
+     * // Get sprite component for rendering
+     * const sprite = node.getComponent(Sprite);
+     * if (sprite) {
+     *     sprite.spriteFrame = newTexture;
+     * }
+     * 
+     * // Get custom script component
+     * const playerScript = node.getComponent(PlayerController);
      * ```
      */
     public getComponent<T extends Component>(classConstructor: Constructor<T> | AbstractedConstructor<T>): T | null;
@@ -1024,13 +1072,32 @@ export class Node extends CCObject implements ISchedulable, CustomSerializable {
     }
 
     /**
-     * @en Adds a component class to the node. You can also add component to node by passing in the name of the script.
-     * @zh 向节点添加一个指定类型的组件类，你还可以通过传入脚本的名称来添加组件。
-     * @param classConstructor The class of the component to add
-     * @throws `TypeError` if the `classConstructor` does not specify a cc-class constructor extending the `Component`.
+     * @en Dynamically adds a new component instance to this node.
+     * @zh 向节点动态添加新的组件实例。
+     * @description Component addition behavior:
+     * - Creates and attaches a new component instance to the node
+     * - Automatically handles component lifecycle (initialization, activation)
+     * - Validates component requirements and dependencies
+     * - Triggers component events and node hierarchy updates
+     * - Supports both constructor-based and string-based component creation
+     * @method addComponent
+     * @param classConstructor The constructor class of the component to add
+     * @returns The newly created component instance
+     * @throws TypeError if the constructor is invalid or not a Component subclass
+     * @see getComponent For retrieving existing components
+     * @see removeComponent For removing components
      * @example
-     * ```
-     * var sprite = node.addComponent(Sprite);
+     * ```ts
+     * // Add rendering component
+     * const sprite = node.addComponent(Sprite);
+     * sprite.spriteFrame = myTexture;
+     * 
+     * // Add physics component
+     * const rigidBody = node.addComponent(RigidBody);
+     * rigidBody.mass = 10;
+     * 
+     * // Add custom script component
+     * const controller = node.addComponent(PlayerController);
      * ```
      */
     public addComponent<T extends Component>(classConstructor: Constructor<T>): T;
