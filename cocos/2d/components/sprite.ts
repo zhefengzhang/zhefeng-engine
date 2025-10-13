@@ -38,116 +38,79 @@ import { NodeEventType } from '../../scene-graph/node-event';
 import type { RenderData } from '../renderer/render-data';
 
 /**
- * @en
- * Enum for sprite type.
- *
- * @zh
- * Sprite 类型。
+ * @en Enum for sprite type, which determines how the sprite is rendered in the scene.
+ * @zh Sprite 类型枚举，用于决定精灵在场景中的渲染方式。
  */
 export enum SpriteType {
     /**
-     * @en
-     * The simple type.
-     *
-     * @zh
-     * 普通类型。
+     * @en Simple rendering type, stretches the entire sprite uniformly.
+     * @zh 简单渲染类型，均匀拉伸整个精灵。
      */
     SIMPLE = 0,
     /**
-     * @en
-     * The sliced type.
-     *
-     * @zh
-     * 切片（九宫格）类型。
+     * @en Sliced rendering type (9-slice), allows non-uniform scaling of edges and center.
+     * @zh 切片渲染类型（九宫格），允许边缘和中心非均匀缩放。
      */
     SLICED = 1,
     /**
-     * @en
-     * The tiled type.
-     *
-     * @zh  平铺类型
+     * @en Tiled rendering type, repeats the sprite in a grid pattern.
+     * @zh 平铺渲染类型，在网格模式下重复精灵。
      */
-    TILED =  2,
+    TILED = 2,
     /**
-     * @en
-     * The filled type.
-     *
-     * @zh
-     * 填充类型。
+     * @en Filled rendering type, fills a portion of the sprite based on fill parameters.
+     * @zh 填充渲染类型，根据填充参数填充精灵的一部分。
      */
     FILLED = 3,
     // /**
-    //  * @en The mesh type.
-    //  * @zh  以 Mesh 三角形组成的类型
+    //  * @en Mesh rendering type, composed of mesh triangles (commented out).
+    //  * @zh 网格渲染类型，由网格三角形组成（已注释）。
     //  */
     // MESH: 4
 }
 ccenum(SpriteType);
 
 /**
- * @en
- * Enum for fill type.
- *
- * @zh
- * 填充类型。
+ * @en Enum for fill type, used when sprite type is FILLED to specify the filling direction or method.
+ * @zh 填充类型枚举，用于精灵类型为FILLED时指定填充方向或方法。
  */
 enum FillType {
     /**
-     * @en
-     * The horizontal fill.
-     *
-     * @zh
-     * 水平方向填充。
+     * @en Horizontal filling, fills the sprite from left to right or vice versa.
+     * @zh 水平填充，从左到右填充精灵。
      */
     HORIZONTAL = 0,
     /**
-     * @en
-     * The vertical fill.
-     *
-     * @zh
-     * 垂直方向填充。
+     * @en Vertical filling, fills the sprite from bottom to top or vice versa.
+     * @zh 垂直填充，从下到上填充精灵。
      */
     VERTICAL = 1,
     /**
-     * @en
-     * The radial fill.
-     *
-     * @zh  径向填充
+     * @en Radial filling, fills the sprite in a circular pattern from the center.
+     * @zh 径向填充，从中心以圆形模式填充精灵。
      */
     RADIAL = 2,
 }
 ccenum(FillType);
 
 /**
- * @en
- * Sprite Size can track trimmed size, raw size or none.
- *
- * @zh
- * 精灵尺寸调整模式。
+ * @en Enum for sprite size mode, determines how the sprite's size adapts to its frame.
+ * @zh 精灵尺寸模式枚举，决定精灵尺寸如何适应其帧。
  */
 enum SizeMode {
     /**
-     * @en
-     * Use the customized node size.
-     *
-     * @zh
-     * 使用节点预设的尺寸。
+     * @en Custom mode, uses the node's predefined size without adaptation.
+     * @zh 自定义模式，使用节点预设尺寸，不进行适应。
      */
     CUSTOM = 0,
     /**
-     * @en
-     * Match the trimmed size of the sprite frame automatically.
-     *
-     * @zh
-     * 自动适配为精灵裁剪后的尺寸。
+     * @en Trimmed mode, automatically matches the trimmed dimensions of the sprite frame.
+     * @zh 裁剪模式，自动匹配精灵帧的裁剪后尺寸。
      */
     TRIMMED = 1,
     /**
-     * @en
-     * Match the raw size of the sprite frame automatically.
-     *
-     * @zh
-     * 自动适配为精灵原图尺寸。
+     * @en Raw mode, automatically matches the original untrimmed dimensions of the sprite frame.
+     * @zh 原始模式，自动匹配精灵帧的原始未裁剪尺寸。
      */
     RAW = 2,
 }
@@ -158,11 +121,10 @@ export enum SpriteEventType {
 }
 
 /**
- * @en
- * Renders a sprite in the scene.
- *
- * @zh
- * 渲染精灵组件。
+ * @en Renders a sprite in the scene, supporting various rendering types like simple, sliced, tiled, and filled.
+ * This component handles sprite frames, atlases, and material configurations for 2D graphics in Cocos Creator.
+ * @zh 渲染场景中的精灵，支持简单、切片、平铺和填充等多种渲染类型。
+ * 该组件处理精灵帧、图集和材质配置，用于Cocos Creator中的2D图形渲染。
  */
 @ccclass('cc.Sprite')
 @help('i18n:cc.Sprite')
@@ -193,11 +155,8 @@ export class Sprite extends UIRenderer {
     }
 
     /**
-     * @en
-     * The sprite frame of the sprite.
-     *
-     * @zh
-     * 精灵的精灵帧。
+     * @en The sprite frame used for rendering this sprite. Changing this updates the texture and size accordingly.
+     * @zh 用于渲染此精灵的精灵帧。更改此属性会相应更新纹理和尺寸。
      */
     @type(SpriteFrame)
     @displayOrder(5)
@@ -487,6 +446,14 @@ export class Sprite extends UIRenderer {
         }
     }
 
+    /**
+     * @en Called when the component is enabled. Activates materials, updates UV coordinates,
+     * and registers sprite frame event listeners for sliced sprites.
+     * This ensures the sprite is properly rendered when the component becomes active.
+     * @zh 当组件启用时调用。激活材质，更新UV坐标，
+     * 并为切片精灵注册精灵帧事件监听器。
+     * 这确保了组件激活时精灵能够正确渲染。
+     */
     public onEnable (): void {
         super.onEnable();
 
@@ -501,6 +468,12 @@ export class Sprite extends UIRenderer {
         }
     }
 
+    /**
+     * @en Called when the component is disabled. Cleans up sprite frame event listeners
+     * to prevent memory leaks and unnecessary updates when the component is inactive.
+     * @zh 当组件禁用时调用。清理精灵帧事件监听器，
+     * 以防止内存泄漏和组件非活动时的不必要更新。
+     */
     public onDisable (): void {
         super.onDisable();
         if (this._spriteFrame && this._type === SpriteType.SLICED) {
@@ -508,6 +481,12 @@ export class Sprite extends UIRenderer {
         }
     }
 
+    /**
+     * @en Called when the component is destroyed. Removes all event listeners
+     * and performs cleanup to prevent memory leaks.
+     * @zh 当组件销毁时调用。移除所有事件监听器
+     * 并执行清理以防止内存泄漏。
+     */
     public onDestroy (): void {
         if (EDITOR) {
             this.node.off(NodeEventType.SIZE_CHANGED, this._resized, this);
@@ -590,7 +569,6 @@ export class Sprite extends UIRenderer {
         if (!spriteFrame || !spriteFrame.texture) {
             return false;
         }
-
         return true;
     }
 
