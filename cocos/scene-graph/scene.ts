@@ -51,6 +51,10 @@ export class Scene extends Node {
         return this._renderScene;
     }
 
+    /**
+     * @en Scene-level global settings and configurations
+     * @zh 场景级别的全局设置和配置
+     */
     @editable
     get globals (): SceneGlobals {
         return this._globals;
@@ -73,18 +77,63 @@ export class Scene extends Node {
     @serializable
     public _globals = new SceneGlobals();
 
-    public dependAssets = null; // cache all depend assets for auto release
+    /**
+     * @en Cache for all dependent assets used for automatic release
+     * @zh 用于自动释放的所有依赖资源的缓存
+     */
+    public dependAssets = null;
 
+    /**
+     * @en Internal render scene instance
+     * @zh 内部渲染场景实例
+     */
     protected _renderScene: RenderScene | null = null;
 
+    /**
+     * @en Flag indicating whether the scene has been initialized
+     * @zh 标识场景是否已经初始化的标志
+     */
     protected declare _inited: boolean;
 
+    /**
+     * @en Flag for prefab synchronization during live reload
+     * @zh 热重载期间预制体同步的标志
+     */
     protected _prefabSyncedInLiveReload = false;
 
+    /**
+     * @en Update the scene reference for this node
+     * @zh 更新此节点的场景引用
+     */
     protected _updateScene (): void {
         this._scene = this;
     }
 
+    /**
+     * @description Creates a new Scene instance with the specified name and initializes its core systems
+     * @description 创建一个具有指定名称的新场景实例并初始化其核心系统
+     *
+     * @method constructor
+     * @param {string} name - The name identifier for this scene / 此场景的名称标识符
+     *
+     * Functionality / 功能职责:
+     * - Initialize scene hierarchy state / 初始化场景层级状态
+     * - Create render scene instance / 创建渲染场景实例
+     * - Set up scene initialization flags / 设置场景初始化标志
+     * - Configure scene activation state / 配置场景激活状态
+     *
+     * @see Node constructor for base initialization
+     * @see RenderScene for rendering pipeline integration
+     *
+     * @example
+     * ```typescript
+     * // Create a new scene
+     * const gameScene = new Scene('GameLevel1');
+     * _nodeActivator
+     * // Scene is automatically registered with director
+     * director.runScene(gameScene);
+     * ```
+     */
     constructor (name: string) {
         super(name);
         this._activeInHierarchy = false;
@@ -95,8 +144,33 @@ export class Scene extends Node {
     }
 
     /**
-     * @en Destroy the current scene and all its nodes, this action won't destroy related assets
-     * @zh 销毁当前场景中的所有节点，这个操作不会销毁资源
+     * @description Destroys the current scene and all its child nodes, preserving related assets
+     * @description 销毁当前场景及其所有子节点，但保留相关资源
+     *
+     * @method destroy
+     * @returns {boolean} True if destruction was successful / 如果销毁成功则返回true
+     *
+     * Functionality / 功能职责:
+     * - Deactivate all child nodes / 停用所有子节点
+     * - Destroy render scene instance / 销毁渲染场景实例
+     * - Reset scene activation state / 重置场景激活状态
+     * - Clean up scene hierarchy / 清理场景层级结构
+     * - Preserve asset references / 保留资源引用
+     *
+     * @warning This method does not destroy assets, only scene nodes
+     * @warning 此方法不会销毁资源，仅销毁场景节点
+     *
+     * @see CCObject.destroy for base destruction logic
+     * @see director.destroyScene for render scene cleanup
+     *
+     * @example
+     * ```typescript
+     * // Destroy current scene
+     * const success = currentScene.destroy();
+     * if (success) {
+     *     console.log('Scene destroyed successfully');
+     * }
+     * ```
      */
     public destroy (): boolean {
         const success = CCObject.prototype.destroy.call(this);
@@ -127,6 +201,8 @@ export class Scene extends Node {
     }
 
     /**
+     * @en Internal method for handling hierarchy changes (deprecated)
+     * @zh 处理层级变化的内部方法（已废弃）
      * @deprecated since v3.5.0, this is an engine private interface that will be removed in the future.
      */
     public _onHierarchyChanged (): void {
@@ -134,6 +210,9 @@ export class Scene extends Node {
     }
 
     /**
+     * @en Internal method called after activation state changes (deprecated)
+     * @zh 激活状态改变后调用的内部方法（已废弃）
+     * @param active The activation state
      * @deprecated since v3.5.0, this is an engine private interface that will be removed in the future.
      */
     public _onPostActivated (active: boolean): void {
@@ -141,6 +220,9 @@ export class Scene extends Node {
     }
 
     /**
+     * @en Internal method for batch creation of child nodes (deprecated)
+     * @zh 批量创建子节点的内部方法（已废弃）
+     * @param dontSyncChildPrefab Whether to skip child prefab synchronization
      * @deprecated since v3.5.0, this is an engine private interface that will be removed in the future.
      */
     public _onBatchCreated (dontSyncChildPrefab: boolean): void {
@@ -163,14 +245,39 @@ export class Scene extends Node {
 
     // life-cycle call backs
 
+    /**
+     * @en Internal method for instantiating scene nodes (not supported for Scene)
+     * @zh 用于实例化场景节点的内部方法（Scene 不支持此操作）
+     * @param cloned The cloned node reference
+     * @param isSyncedNode Whether this is a synchronized node
+     * @returns Always returns null for Scene instances
+     */
     protected _instantiate (cloned?: Node | null, isSyncedNode: boolean = false): Node {
         // Can not initialize scene.
         return null as unknown as Node;
     }
 
     /**
+     * @description Internal method to load and initialize the scene with all its components and nodes
+     * @description 加载和初始化场景及其所有组件和节点的内部方法
+     *
+     * @method _load
      * @engineInternal
      * @mangle
+     *
+     * Functionality / 功能职责:
+     * - Expand nested prefab instance nodes / 展开嵌套预制体实例节点
+     * - Apply target overrides to nodes / 应用节点目标覆盖
+     * - Batch create child nodes / 批量创建子节点
+     * - Set scene reference for all nodes / 为所有节点设置场景引用
+     * - Initialize scene state flags / 初始化场景状态标志
+     *
+     * @warning This is an internal engine method, should not be called directly
+     * @warning 这是引擎内部方法，不应直接调用
+     *
+     * @see expandNestedPrefabInstanceNode for prefab processing
+     * @see applyTargetOverrides for node override logic
+     * @see Node._setScene for scene reference setup
      */
     public _load (): void {
         if (!this._inited) {
@@ -188,8 +295,25 @@ export class Scene extends Node {
     }
 
     /**
+     * @description Internal method to activate or deactivate the scene and all its systems
+     * @description 激活或停用场景及其所有系统的内部方法
+     *
+     * @method _activate
+     * @param {boolean} active - Whether to activate the scene / 是否激活场景
      * @engineInternal
      * @mangle
+     *
+     * Functionality / 功能职责:
+     * - Register/unregister nodes with editor (in editor mode) / 在编辑器中注册/注销节点
+     * - Activate/deactivate node hierarchy / 激活/停用节点层级
+     * - Activate scene globals and rendering systems / 激活场景全局设置和渲染系统
+     * - Manage scene lifecycle state / 管理场景生命周期状态
+     *
+     * @warning This is an internal engine method, should not be called directly
+     * @warning 这是引擎内部方法，不应直接调用
+     *
+     * @see director._nodeActivator for node activation logic
+     * @see SceneGlobals.activate for rendering system activation
      */
     public _activate (active = true): void {
         if (EDITOR) {
