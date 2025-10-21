@@ -91,7 +91,7 @@ export class Scene extends Node {
 
     /**
      * @en Flag indicating whether the scene has been initialized
-     * @zh 标识场景是否已经初始化的标志
+     * @zh 场景是否已经初始化的标志
      */
     protected declare _inited: boolean;
 
@@ -103,7 +103,7 @@ export class Scene extends Node {
 
     /**
      * @en Update the scene reference for this node
-     * @zh 更新此节点的场景引用
+     * @zh 更新场景
      */
     protected _updateScene (): void {
         this._scene = this;
@@ -144,8 +144,8 @@ export class Scene extends Node {
     }
 
     /**
-     * @description Destroys the current scene and all its child nodes, preserving related assets
-     * @description 销毁当前场景及其所有子节点，但保留相关资源
+     * @description Destroys the current scene and all its child nodes
+     * @description 销毁当前场景及其所有节点
      *
      * @method destroy
      * @returns {boolean} True if destruction was successful / 如果销毁成功则返回true
@@ -155,7 +155,6 @@ export class Scene extends Node {
      * - Destroy render scene instance / 销毁渲染场景实例
      * - Reset scene activation state / 重置场景激活状态
      * - Clean up scene hierarchy / 清理场景层级结构
-     * - Preserve asset references / 保留资源引用
      *
      * @warning This method does not destroy assets, only scene nodes
      * @warning 此方法不会销毁资源，仅销毁场景节点
@@ -221,7 +220,7 @@ export class Scene extends Node {
 
     /**
      * @en Internal method for batch creation of child nodes (deprecated)
-     * @zh 批量创建子节点的内部方法（已废弃）
+     * @zh 批量创建子节点（已废弃）
      * @param dontSyncChildPrefab Whether to skip child prefab synchronization
      * @deprecated since v3.5.0, this is an engine private interface that will be removed in the future.
      */
