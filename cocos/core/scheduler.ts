@@ -35,11 +35,11 @@ const idGenerator = new IDGenerator('Scheduler');
 
 /**
  * @en Interface for objects that can be scheduled by the Scheduler.
- * This interface defines the contract for objects that need to be managed by the Scheduler system.
+ * This interface defines the objects that need to be managed by the Scheduler system.
  * Objects implementing this interface can receive regular update calls and timer-based callbacks.
  *
  * @zh 可以被 Scheduler 调度的对象接口。
- * 此接口定义了需要被调度器系统管理的对象的契约。
+ * 此接口定义了需要被调度器系统管理的对。
  * 实现此接口的对象可以接收定期的更新调用和基于定时器的回调。
  *
  * @example
