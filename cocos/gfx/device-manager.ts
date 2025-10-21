@@ -190,8 +190,8 @@ export class DeviceManager {
      * - 处理设备回退场景
      * - 配置Canvas上下文和事件处理器
      *
-     * @warning Calling this method multiple times will return early without re-initialization
-     * @warning 多次调用此方法将提前返回而不重新初始化
+     * @warning Calling this method multiple times will return true without re-initialization
+     * @warning 多次调用此方法将返回true而不重新初始化
      *
      * @throws {Error} When no suitable graphics device can be created
      * @throws {Error} 当无法创建合适的图形设备时
@@ -227,7 +227,6 @@ export class DeviceManager {
                 this._gfxDevice = gfx.DeviceManager.create(deviceInfo);
             } else {
                 let useWebGL2 = (!!globalThis.WebGL2RenderingContext);
-                const userAgent = globalThis.navigator.userAgent.toLowerCase();
                 // UC browser implementation doesn't conform to WebGL2 standard
                 if (sys.browserType === BrowserType.UC) {
                     useWebGL2 = false;
