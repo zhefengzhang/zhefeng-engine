@@ -186,6 +186,13 @@ export class Graphics extends UIRenderer {
         // this.impl.miterLimit = value;
     }
 
+    /**
+     * @en
+     * Modifying this property will not affect the color of this component. Please modify the fillColor or strokeColor property.
+     *
+     * @zh
+     * 修改此属性不会影响此组件的颜色，请修改 fillColor 或 strokeColor 属性。
+     */
     @override
     @visible(false)
     get color (): Color {
@@ -228,6 +235,12 @@ export class Graphics extends UIRenderer {
     //nativeObj
     protected declare _graphicsNativeProxy: NativeUIModelProxy;
     /**
+     * @en
+     * The proxy object of the graphics component in the native adaptation layer.
+     *
+     * @zh
+     * graphics 组件在原生适配层的代理对象。
+     *
      * @deprecated since v3.7.0, this is an engine private interface that will be removed in the future.
      */
     get graphicsNativeProxy (): NativeUIModelProxy {
