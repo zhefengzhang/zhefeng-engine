@@ -88,7 +88,7 @@ let skewCompCount = 0;
 
 /**
  * @en Node - The fundamental entity class in Cocos Creator scene graph system.
- * @zh Node - Cocos Creator 场景图系统中的基础实体类。
+ * @zh Node - Cocos Creator 场景图系统中的基础类。
  * @description Core scene graph entity with comprehensive capabilities:
  * - **Hierarchy Management**: Parent-child relationships and tree traversal
  * - **Component System**: Attach and manage various functional components
@@ -104,16 +104,16 @@ let skewCompCount = 0;
  * import { Node, BoxCollider, Sprite } from 'cc';
  * // Create a new node
  * const node = new Node('MyNode');
- * 
+ *
  * // Set transform properties
  * node.setPosition(100, 200, 0);
  * node.setRotationFromEuler(0, 45, 0);
  * node.setScale(2, 2, 2);
- * 
+ *
  * // Add components
  * const sprite = node.addComponent(Sprite);
  * const collider = node.addComponent(BoxCollider);
- * 
+ *
  * // Hierarchy management
  * parentNode.addChild(node);
  * ```
@@ -187,8 +187,8 @@ export class Node extends CCObject implements ISchedulable, CustomSerializable {
     }
 
     /**
-     * @en Local activation state of this node (independent of parent hierarchy).
-     * @zh 当前节点的本地激活状态（独立于父级层次结构）。
+     * @en Activation state of this node.
+     * @zh 当前节点的激活状态。
      * @description Node activation behavior:
      * - Controls whether this node participates in scene updates
      * - Affects component lifecycle (onEnable/onDisable)
@@ -201,7 +201,7 @@ export class Node extends CCObject implements ISchedulable, CustomSerializable {
      * ```ts
      * // Local activation (may not affect scene if parent inactive)
      * node.active = false; // Deactivate locally
-     * 
+     *
      * // Check actual scene activation
      * if (node.activeInHierarchy) {
      *     // Node is truly active in scene
@@ -260,7 +260,7 @@ export class Node extends CCObject implements ISchedulable, CustomSerializable {
      * if (node.parent) {
      *     console.log('Parent name:', node.parent.name);
      * }
-     * 
+     *
      * // Set parent safely
      * node.setParent(newParent);
      * ```
@@ -902,7 +902,7 @@ export class Node extends CCObject implements ISchedulable, CustomSerializable {
      * if (sprite) {
      *     sprite.spriteFrame = newTexture;
      * }
-     * 
+     *
      * // Get custom script component
      * const playerScript = node.getComponent(PlayerController);
      * ```
@@ -1091,11 +1091,11 @@ export class Node extends CCObject implements ISchedulable, CustomSerializable {
      * // Add rendering component
      * const sprite = node.addComponent(Sprite);
      * sprite.spriteFrame = myTexture;
-     * 
+     *
      * // Add physics component
      * const rigidBody = node.addComponent(RigidBody);
      * rigidBody.mass = 10;
-     * 
+     *
      * // Add custom script component
      * const controller = node.addComponent(PlayerController);
      * ```
