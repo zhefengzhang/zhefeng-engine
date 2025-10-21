@@ -106,7 +106,6 @@ export interface IAssetManagerOptions {
      *
      * @zh
      * 用于下载资源的远程服务器基础 URL。
-     * 不应包含尾部斜杠。
      */
     server?: string;
 
