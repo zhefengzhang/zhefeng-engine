@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /*
  Copyright (c) 2022-2023 Xiamen Yaji Software Co., Ltd.
 
@@ -52,7 +53,7 @@ interface ICachedStyle {
 /**
  * @constant EVENT_TIMEOUT
  * @description Timeout duration for handling orientation change events
- * @description_zh 处理屏幕方向变化事件的超时时长
+ * @description_zh 处理屏幕方向变化事件的延迟时间
  * @rationale Different timeout values for editor vs runtime to balance responsiveness and stability
  * @rationale_zh 编辑器和运行时使用不同的超时值以平衡响应性和稳定性
  */
@@ -73,8 +74,8 @@ const orientationMap: Record<ConfigOrientation, Orientation> = {
 
 /**
  * @enum WindowType
- * @description Defines different types of game window contexts on web platform
- * @description_zh 定义 Web 平台上不同类型的游戏窗口上下文
+ * @description Defines different types of game window on web platform
+ * @description_zh 定义 Web 平台上不同类型的游戏窗口
  * @purpose Determines how screen adapter handles window sizing and events
  * @purpose_zh 决定屏幕适配器如何处理窗口大小调整和事件
  * @ai_context This enum is crucial for understanding how the screen adapter behaves in different web environments
@@ -139,23 +140,23 @@ enum WindowType {
  * @ai_context_zh 对于理解全屏功能如何在不同浏览器中工作至关重要
  */
 interface IScreenFunctionName {
-    /** Method name for requesting fullscreen mode */
-    /** 请求全屏模式的方法名称 */
+    /** Function for requesting fullscreen mode */
+    /** 请求全屏模式的函数 */
     requestFullscreen: string,
-    /** Method name for exiting fullscreen mode */
-    /** 退出全屏模式的方法名称 */
+    /** Function for exiting fullscreen mode */
+    /** 退出全屏模式的函数 */
     exitFullscreen: string,
-    /** Event name for fullscreen state changes */
-    /** 全屏状态变化的事件名称 */
+    /** Function for fullscreen state changes */
+    /** 全屏状态变化的事件函数 */
     fullscreenchange: string,
-    /** Property name for checking fullscreen support */
-    /** 检查全屏支持的属性名称 */
+    /** Function for enable fullscreen */
+    /** 是否启动全屏函数 */
     fullscreenEnabled: string,
-    /** Property name for getting current fullscreen element */
-    /** 获取当前全屏元素的属性名称 */
+    /** Function for getting current fullscreen element */
+    /** 获取当前全屏元素的函数 */
     fullscreenElement: string,
-    /** Event name for fullscreen errors */
-    /** 全屏错误的事件名称 */
+    /** Function for fullscreen errors */
+    /** 全屏错误的事件函数 */
     fullscreenerror: string,
 }
 
@@ -187,8 +188,8 @@ interface IScreenFunctionName {
 class ScreenAdapter extends EventTarget {
     /**
      * @property isFrameRotated
-     * @description Indicates if the game frame is currently rotated (90 degrees)
-     * @description_zh 指示游戏框架当前是否旋转（90度）
+     * @description Indicates if the game frame is currently rotated
+     * @description_zh 指示游戏框架当前是否旋转
      * @usage Used on mobile devices when orientation doesn't match desired layout
      * @usage_zh 在移动设备上当方向与期望布局不匹配时使用
      */
@@ -237,10 +238,6 @@ class ScreenAdapter extends EventTarget {
      * @description_zh 获取设备像素比，最大限制为 2
      * @returns {number} Device pixel ratio (1.0 to 2.0)
      * @returns_zh {number} 设备像素比（1.0 到 2.0）
-     * @ai_context Important for high-DPI display support and performance optimization
-     * @ai_context_zh 对于高 DPI 显示支持和性能优化很重要
-     * @rationale Clamped to 2 to prevent excessive memory usage on very high DPI displays
-     * @rationale_zh 限制为 2 以防止在非常高 DPI 显示器上过度使用内存
      */
     public get devicePixelRatio (): number {
         // TODO: remove the down sampling operation in DPR after supporting resolutionScale
@@ -339,11 +336,11 @@ class ScreenAdapter extends EventTarget {
     /**
      * @setter orientation
      * @description Sets the desired orientation and updates frame accordingly
-     * @description_zh 设置期望的方向并相应地更新框架
+     * @description_zh 设置期望的方向并更新框架
      * @param {Orientation} value - Desired orientation mode
      * @param_zh {Orientation} value - 期望的方向模式
      * @ai_context Triggers frame update to handle orientation-specific layout changes
-     * @ai_context_zh 触发框架更新以处理特定方向的布局变化
+     * @ai_context_zh 方向的变化时触发框架更新
      */
     public set orientation (value: Orientation) {
         if (this._orientation === value) {
@@ -368,8 +365,8 @@ class ScreenAdapter extends EventTarget {
 
     /**
      * @getter safeAreaEdge
-     * @description Gets safe area insets for devices with notches or rounded corners
-     * @description_zh 获取具有刘海或圆角的设备的安全区域插入值
+     * @description Gets safe area insets for devices
+     * @description_zh 获取设备的安全区
      * @returns {SafeAreaEdge} Safe area measurements in physical pixels
      * @returns_zh {SafeAreaEdge} 物理像素中的安全区域测量值
      * @ai_context Critical for UI layout on modern mobile devices with screen cutouts
@@ -393,7 +390,7 @@ class ScreenAdapter extends EventTarget {
     /**
      * @getter isProportionalToFrame
      * @description Checks if game container maintains aspect ratio relative to frame
-     * @description_zh 检查游戏容器是否相对于框架保持宽高比
+     * @description_zh 获取游戏容器是否相对于框架保持宽高比
      * @returns {boolean} True if proportional scaling is enabled
      * @returns_zh {boolean} 如果启用比例缩放则返回 true
      */
@@ -418,9 +415,6 @@ class ScreenAdapter extends EventTarget {
         this._updateContainer();
     }
 
-    // Private properties with detailed documentation for AI understanding
-    // 具有详细文档的私有属性，便于 AI 理解
-
     /** @private Game frame DOM element (outer container) */
     /** @private 游戏框架 DOM 元素（外部容器） */
     private _gameFrame?: HTMLDivElement;
@@ -434,15 +428,15 @@ class ScreenAdapter extends EventTarget {
     private _gameCanvas?: HTMLCanvasElement;
 
     /** @private Whether container should scale proportionally to frame */
-    /** @private 容器是否应相对于框架按比例缩放 */
+    /** @private 是否按比例缩放 */
     private _isProportionalToFrame = false;
 
     /** @private Cached frame style for change detection */
-    /** @private 用于变化检测的缓存框架样式 */
+    /** @private 框架样式缓存 */
     private _cachedFrameStyle: ICachedStyle = { width: '0px', height: '0px' };
 
     /** @private Cached container style for change detection */
-    /** @private 用于变化检测的缓存容器样式 */
+    /** @private 容器样式缓存 */
     private _cachedContainerStyle: ICachedStyle = { width: '0px', height: '0px' };
 
     /** @private Callback to trigger framebuffer updates */
@@ -454,7 +448,7 @@ class ScreenAdapter extends EventTarget {
     private _supportFullScreen = false;
 
     /** @private Touch/mouse event name for fullscreen triggers */
-    /** @private 用于全屏触发的触摸/鼠标事件名称 */
+    /** @private 触摸/鼠标事件名称 */
     private _touchEventName: string;
 
     /** @private Fullscreen change event callback */
@@ -470,7 +464,7 @@ class ScreenAdapter extends EventTarget {
     private _orientationChangeTimeoutId = -1;
 
     /** @private Cached frame size before entering fullscreen */
-    /** @private 进入全屏前的缓存框架大小 */
+    /** @private 框架大小的缓存 */
     private _cachedFrameSize = new Size(0, 0);
 
     /** @private Whether frame should exactly fit screen */
@@ -478,17 +472,17 @@ class ScreenAdapter extends EventTarget {
     private _exactFitScreen = false;
 
     /** @private Whether running in headless mode (no display) */
-    /** @private 是否在无头模式下运行（无显示） */
+    /** @private 是否Headless模式（无显示） */
     private _isHeadlessMode = false;
 
     /** @private Cross-browser fullscreen function names */
-    /** @private 跨浏览器全屏函数名称 */
+    /** @private 跨浏览器全屏函数 */
     private _fn = {} as IScreenFunctionName;
 
     /**
      * @private _fnGroup
      * @description Cross-browser compatibility matrix for fullscreen API
-     * @description_zh 全屏 API 的跨浏览器兼容性矩阵
+     * @description_zh 全屏 API 的跨浏览器兼容性数组
      * @ai_context Each sub-array represents a different browser's fullscreen API naming convention
      * @ai_context_zh 每个子数组代表不同浏览器的全屏 API 命名约定
      */
@@ -605,32 +599,23 @@ class ScreenAdapter extends EventTarget {
         if (this._exactFitScreen) {
             // Note: It doesn't work well to determine whether the frame exact fits the screen.
             // Need to specify the attribute from Editor.
-            // 注意：确定框架是否完全适合屏幕的效果不佳。
-            // 需要从编辑器指定属性。
             return WindowType.BrowserWindow;
         }
         return WindowType.SubFrame;
     }
 
     /** @private Current resolution scaling factor */
-    /** @private 当前分辨率缩放因子 */
+    /** @private 分辨率缩放因子 */
     private _resolutionScale = 1;
 
-    /** @private User-set orientation preference */
-    /** @private 用户设置的方向偏好 */
+    /** @private User-set orientation */
+    /** @private 方向 */
     private _orientation = Orientation.AUTO;
 
     /** @private Device's actual orientation state */
-    /** @private 设备的实际方向状态 */
+    /** @private 设备的实际方向 */
     private _orientationDevice = Orientation.AUTO;
 
-    /**
-     * @constructor
-     * @description Initializes the screen adapter with DOM elements and event handlers
-     * @description_zh 使用 DOM 元素和事件处理程序初始化屏幕适配器
-     * @ai_context Sets up the foundation for screen management including DOM references and cross-browser compatibility
-     * @ai_context_zh 为屏幕管理建立基础，包括 DOM 引用和跨浏览器兼容性
-     */
     constructor () {
         super();
         // TODO: need to access frame from 'pal/launcher' module
@@ -699,11 +684,9 @@ class ScreenAdapter extends EventTarget {
     /**
      * @method requestFullScreen
      * @description Requests fullscreen mode with fallback for user gesture requirement
-     * @description_zh 请求全屏模式，为用户手势要求提供回退
+     * @description_zh 请求全屏模式，错误时等待用户交互
      * @returns {Promise<void>} Promise that resolves when fullscreen is achieved
      * @returns_zh {Promise<void>} 当实现全屏时解析的 Promise
-     * @ai_context Handles browser security restrictions that require user gestures for fullscreen
-     * @ai_context_zh 处理需要用户手势才能全屏的浏览器安全限制
      */
     public requestFullScreen (): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -737,8 +720,6 @@ class ScreenAdapter extends EventTarget {
      * @description_zh 退出全屏模式并恢复之前的窗口大小
      * @returns {Promise<void>} Promise that resolves when fullscreen is exited
      * @returns_zh {Promise<void>} 当退出全屏时解析的 Promise
-     * @ai_context Restores cached frame size after exiting fullscreen
-     * @ai_context_zh 退出全屏后恢复缓存的框架大小
      */
     public exitFullScreen (): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -760,8 +741,6 @@ class ScreenAdapter extends EventTarget {
      * @description Registers all necessary event listeners for screen management
      * @description_zh 为屏幕管理注册所有必要的事件监听器
      * @private
-     * @ai_context Comprehensive event handling for resize, orientation, fullscreen, and DPI changes
-     * @ai_context_zh 对调整大小、方向、全屏和 DPI 变化的全面事件处理
      */
     private _registerEvent (): void {
         // Fullscreen error handling
@@ -830,8 +809,6 @@ class ScreenAdapter extends EventTarget {
 
         /*After receive orientation-change event, window.innerWidth & innerHeight may not change immediately,
         so we delay EVENT_TIMEOUT to handle orientation-change.*/
-        /*收到方向变化事件后，window.innerWidth 和 innerHeight 可能不会立即改变，
-        所以我们延迟 EVENT_TIMEOUT 来处理方向变化。*/
         let handleOrientationChange;
 
         /**
@@ -849,7 +826,6 @@ class ScreenAdapter extends EventTarget {
         };
 
         // Modern browsers: use MediaQuery API for orientation detection
-        // 现代浏览器：使用 MediaQuery API 进行方向检测
         if (typeof window.matchMedia === 'function') {
             /**
              * @function updateDPRChangeListener
@@ -966,8 +942,6 @@ class ScreenAdapter extends EventTarget {
      * @param {Size} [sizeInCssPixels] - Optional size for SubFrame mode
      * @param_zh {Size} [sizeInCssPixels] - SubFrame 模式的可选大小
      * @private
-     * @ai_context Core method that handles frame sizing logic for different window types and orientations
-     * @ai_context_zh 处理不同窗口类型和方向的框架大小调整逻辑的核心方法
      */
     private _resizeFrame (sizeInCssPixels?: Size): void {
         if (!this._gameFrame) {
@@ -1031,8 +1005,6 @@ class ScreenAdapter extends EventTarget {
      * @returns {HTMLElement | undefined} Target element for fullscreen
      * @returns_zh {HTMLElement | undefined} 全屏的目标元素
      * @private
-     * @ai_context Different window types require different fullscreen targets
-     * @ai_context_zh 不同的窗口类型需要不同的全屏目标
      */
     private _getFullscreenTarget (): HTMLElement | undefined {
         const windowType = this._windowType;
@@ -1056,8 +1028,6 @@ class ScreenAdapter extends EventTarget {
      * @returns {Promise<void>} Promise that resolves when fullscreen is achieved
      * @returns_zh {Promise<void>} 当实现全屏时解析的 Promise
      * @private
-     * @ai_context Handles both Promise-based and callback-based fullscreen APIs
-     * @ai_context_zh 处理基于 Promise 和基于回调的全屏 API
      */
     private _doRequestFullScreen (): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -1179,8 +1149,6 @@ class ScreenAdapter extends EventTarget {
  * @constant screenAdapter
  * @description Singleton instance of ScreenAdapter for web platform
  * @description_zh Web 平台 ScreenAdapter 的单例实例
- * @ai_context This is the main export that other modules use to access screen functionality
- * @ai_context_zh 这是其他模块用来访问屏幕功能的主要导出
  */
 export const screenAdapter = new ScreenAdapter();
 
