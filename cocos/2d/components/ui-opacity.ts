@@ -117,7 +117,7 @@ export class UIOpacity extends Component {
      * 技术实现：
      * - setter 执行值验证和归一化（value / 255）
      * - 调用 _syncLocalOpacity() 更新渲染系统
-     * - 在编辑器模式下，延迟 200ms 触发节点变更事件
+     * - 在编辑器并且非预览模式下，延迟 200ms 触发节点变更事件
      * - 设置相同值时的早期返回优化
      *
      * 渲染影响：
