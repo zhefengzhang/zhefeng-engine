@@ -39,35 +39,35 @@ import { warn, warnID } from '../../../cocos/core/platform/debug';
 /**
  * @interface SafeAreaEdge
  * @description Safe area edge insets for different screen edges
- * @description 不同屏幕边缘的安全区域边缘插入值
+ * @description 不同屏幕边缘的安全区域
  * @ai_context Defines the safe area measurements for top, bottom, left, and right edges in pixels
- * @ai_context_zh 定义顶部、底部、左侧和右侧边缘的安全区域测量值（像素单位）
+ * @ai_context_zh 定义顶部、底部、左侧和右侧边缘的数值（像素单位）
  */
 export interface SafeAreaEdge {
     /**
      * @description Top edge safe area inset in pixels
-     * @description 顶部边缘安全区域插入值（像素）
+     * @description 顶部值（像素）
      * @ai_context Distance from top of screen to safe content area
      * @ai_context_zh 从屏幕顶部到安全内容区域的距离
      */
     top: number;
     /**
      * @description Bottom edge safe area inset in pixels
-     * @description 底部边缘安全区域插入值（像素）
+     * @description 底部值（像素）
      * @ai_context Distance from bottom of screen to safe content area
      * @ai_context_zh 从屏幕底部到安全内容区域的距离
      */
     bottom: number;
     /**
      * @description Left edge safe area inset in pixels
-     * @description 左侧边缘安全区域插入值（像素）
+     * @description 左侧值（像素）
      * @ai_context Distance from left of screen to safe content area
      * @ai_context_zh 从屏幕左侧到安全内容区域的距离
      */
     left: number;
     /**
      * @description Right edge safe area inset in pixels
-     * @description 右侧边缘安全区域插入值（像素）
+     * @description 右侧值（像素）
      * @ai_context Distance from right of screen to safe content area
      * @ai_context_zh 从屏幕右侧到安全内容区域的距离
      */
@@ -107,9 +107,9 @@ export interface IScreenOptions {
     exactFitScreen: boolean,
     /**
      * @description Determine whether use headless renderer
-     * @description 确定是否使用无头渲染器
+     * @description 确定是否使用Headless
      * @ai_context Enables headless rendering mode which disables some screen operations for server-side rendering
-     * @ai_context_zh 启用无头渲染模式，为服务器端渲染禁用某些屏幕操作
+     * @ai_context_zh 启用Headless模式，为服务器端渲染禁用某些屏幕操作
      */
     isHeadlessMode: boolean;
 }
@@ -138,7 +138,7 @@ const orientationMap: Record<string, Orientation> = {
 class ScreenAdapter extends EventTarget {
     /**
      * @description Indicates if the frame is rotated
-     * @description 指示帧是否已旋转
+     * @description 框架是否已旋转
      * @ai_context Frame rotation state for orientation handling in native platforms
      * @ai_context_zh 原生平台中用于方向处理的帧旋转状态
      */
@@ -154,7 +154,7 @@ class ScreenAdapter extends EventTarget {
 
     /**
      * @description Check if full screen mode is supported
-     * @description 检查是否支持全屏模式
+     * @description 是否支持全屏模式
      * @returns {boolean} Always false for native platforms
      * @returns {boolean} 原生平台始终返回false
      * @ai_context Native platforms do not support programmatic full screen mode
@@ -166,7 +166,7 @@ class ScreenAdapter extends EventTarget {
 
     /**
      * @description Check if currently in full screen mode
-     * @description 检查当前是否处于全屏模式
+     * @description 当前是否处于全屏模式
      * @returns {boolean} Always false for native platforms
      * @returns {boolean} 原生平台始终返回false
      * @ai_context Native platforms are never in programmatic full screen mode
@@ -178,7 +178,7 @@ class ScreenAdapter extends EventTarget {
 
     /**
      * @description Get device pixel ratio from native layer
-     * @description 从原生层获取设备像素比
+     * @description 获取设备像素比
      * @returns {number} Device pixel ratio value, defaults to 1 if unavailable
      * @returns {number} 设备像素比值，如果不可用则默认为1
      * @ai_context Retrieves pixel ratio from JSB device API with fallback to 1.0
@@ -193,8 +193,6 @@ class ScreenAdapter extends EventTarget {
      * @description 获取物理像素的窗口大小
      * @returns {Size} Window size object with width and height in physical pixels
      * @returns {Size} 包含物理像素宽度和高度的窗口大小对象
-     * @ai_context Calculates window size from JSB window dimensions with DPR multiplication and Metal precision fix
-     * @ai_context_zh 从JSB窗口尺寸计算窗口大小，包含DPR乘法和Metal精度修复
      */
     public get windowSize (): Size {
         const dpr = this.devicePixelRatio;
@@ -226,8 +224,6 @@ class ScreenAdapter extends EventTarget {
      * @description 获取当前分辨率
      * @returns {Size} Resolution size calculated from window size and scale
      * @returns {Size} 从窗口大小和缩放计算的分辨率大小
-     * @ai_context Resolution is window size multiplied by resolution scale factor
-     * @ai_context_zh 分辨率是窗口大小乘以分辨率缩放因子
      */
     public get resolution (): Size {
         const windowSize = this.windowSize;
@@ -240,8 +236,6 @@ class ScreenAdapter extends EventTarget {
      * @description 获取分辨率缩放因子
      * @returns {number} Current resolution scale value
      * @returns {number} 当前分辨率缩放值
-     * @ai_context Scale factor for resolution calculation in native platforms
-     * @ai_context_zh 原生平台中分辨率计算的缩放因子
      */
     public get resolutionScale (): number {
         return this._resolutionScale;
@@ -289,7 +283,7 @@ class ScreenAdapter extends EventTarget {
 
     /**
      * @description Get safe area edge insets from native device
-     * @description 从原生设备获取安全区域边缘插入值
+     * @description 获取设备的安全区
      * @returns {SafeAreaEdge} Safe area edge measurements in physical pixels
      * @returns {SafeAreaEdge} 物理像素的安全区域边缘测量值
      * @ai_context Calculates safe area from JSB device API with DPR scaling, using XYZW vector mapping
@@ -313,12 +307,10 @@ class ScreenAdapter extends EventTarget {
     }
 
     /**
-     * @description Check if proportional to frame
-     * @description 检查是否与帧成比例
-     * @returns {boolean} Proportional state
-     * @returns {boolean} 比例状态
-     * @ai_context Frame proportionality flag for layout calculations in native platforms
-     * @ai_context_zh 原生平台中用于布局计算的帧比例标志
+     * @description Checks if game container maintains aspect ratio relative to frame
+     * @description_zh 获取游戏容器是否相对于框架保持宽高比
+     * @returns {boolean} True if proportional scaling is enabled
+     * @returns_zh {boolean} 如果启用比例缩放则返回 true
      */
     public get isProportionalToFrame (): boolean {
         return this._isProportionalToFrame;
@@ -334,36 +326,18 @@ class ScreenAdapter extends EventTarget {
      */
     public set isProportionalToFrame (v: boolean) { }
 
-    /**
-     * @description Callback function to update frame buffer
-     * @description 更新帧缓冲区的回调函数
-     * @ai_context Optional callback triggered when frame buffer needs updating in native platforms
-     * @ai_context_zh 当原生平台中帧缓冲区需要更新时触发的可选回调
-     */
+    /** @private Callback to trigger framebuffer updates */
+    /** @private 帧缓冲区更新的回调 */
     private _cbToUpdateFrameBuffer?: () => void;
 
-    /**
-     * @description Internal resolution scale storage
-     * @description 内部分辨率缩放存储
-     * @ai_context Private field storing the current resolution scale factor for native platforms
-     * @ai_context_zh 存储原生平台当前分辨率缩放因子的私有字段
-     */
+    /** @private Current resolution scaling factor */
+    /** @private 分辨率缩放因子 */
     private _resolutionScale = 1;
 
-    /**
-     * @description Internal proportional to frame flag
-     * @description 内部与帧成比例标志
-     * @ai_context Private field for frame proportionality state in native platforms
-     * @ai_context_zh 原生平台中帧比例状态的私有字段
-     */
+    /** @private Whether container should scale proportionally to frame */
+    /** @private 是否按比例缩放 */
     private _isProportionalToFrame = false;
 
-    /**
-     * @description Constructor - Initialize native screen adapter
-     * @description 构造函数 - 初始化原生屏幕适配器
-     * @ai_context Sets up event target and registers native platform events via JSB
-     * @ai_context_zh 设置事件目标并通过JSB注册原生平台事件
-     */
     constructor () {
         super();
         this._registerEvent();
@@ -391,8 +365,6 @@ class ScreenAdapter extends EventTarget {
      * @description 请求全屏模式（原生平台不支持）
      * @returns {Promise<void>} Rejected promise with error message
      * @returns {Promise<void>} 带有错误消息的被拒绝的Promise
-     * @ai_context Always rejects as native platforms don't support programmatic full screen
-     * @ai_context_zh 始终拒绝，因为原生平台不支持程序化全屏
      */
     public requestFullScreen (): Promise<void> {
         return Promise.reject(new Error('request fullscreen has not been supported yet on this platform.'));
@@ -403,8 +375,6 @@ class ScreenAdapter extends EventTarget {
      * @description 退出全屏模式（原生平台不支持）
      * @returns {Promise<void>} Rejected promise with error message
      * @returns {Promise<void>} 带有错误消息的被拒绝的Promise
-     * @ai_context Always rejects as native platforms don't support programmatic full screen
-     * @ai_context_zh 始终拒绝，因为原生平台不支持程序化全屏
      */
     public exitFullScreen (): Promise<void> {
         return Promise.reject(new Error('exit fullscreen has not been supported yet on this platform.'));
@@ -420,8 +390,6 @@ class ScreenAdapter extends EventTarget {
         /**
          * @description Handle window resize events from native layer
          * @description 处理来自原生层的窗口调整大小事件
-         * @ai_context JSB resize event handler with dimension validation and DPR conversion
-         * @ai_context_zh JSB调整大小事件处理程序，包含尺寸验证和DPR转换
          */
         jsb.onResize = (event: jsb.WindowEvent): void => {
             if (event.width === 0 || event.height === 0) return;
@@ -431,12 +399,6 @@ class ScreenAdapter extends EventTarget {
             this.emit('window-resize', event.width, event.height, event.windowId);
         };
 
-        /**
-         * @description Handle orientation change events from native layer
-         * @description 处理来自原生层的方向更改事件
-         * @ai_context JSB orientation change event handler that emits engine orientation events
-         * @ai_context_zh JSB方向更改事件处理程序，发出引擎方向事件
-         */
         jsb.onOrientationChanged = (event): void => {
             this.emit('orientation-change', this.orientation);
         };
