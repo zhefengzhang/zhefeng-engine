@@ -59,7 +59,7 @@ export enum SpriteType {
     TILED = 2,
     /**
      * @en Filled rendering type, fills a portion of the sprite based on fill parameters.
-     * @zh 填充渲染类型，根据填充参数填充精灵的一部分。
+     * @zh 填充渲染类型，根据填充参数填充精灵。
      */
     FILLED = 3,
     // /**
@@ -94,8 +94,8 @@ enum FillType {
 ccenum(FillType);
 
 /**
- * @en Enum for sprite size mode, determines how the sprite's size adapts to its frame.
- * @zh 精灵尺寸模式枚举，决定精灵尺寸如何适应其帧。
+ * @en Enum for sprite size mode, determines how the sprite's size adapts to its spriteFrame.
+ * @zh 精灵尺寸模式枚举，决定精灵尺寸如何适配spriteFrame。
  */
 enum SizeMode {
     /**
@@ -105,12 +105,12 @@ enum SizeMode {
     CUSTOM = 0,
     /**
      * @en Trimmed mode, automatically matches the trimmed dimensions of the sprite frame.
-     * @zh 裁剪模式，自动匹配精灵帧的裁剪后尺寸。
+     * @zh 裁剪模式，自动匹配spriteFrame的裁剪后尺寸。
      */
     TRIMMED = 1,
     /**
-     * @en Raw mode, automatically matches the original untrimmed dimensions of the sprite frame.
-     * @zh 原始模式，自动匹配精灵帧的原始未裁剪尺寸。
+     * @en Raw mode, automatically matches the original untrimmed dimensions of the spriteFrame.
+     * @zh 原始模式，自动匹配spriteFrame的原始未裁剪尺寸。
      */
     RAW = 2,
 }
@@ -124,7 +124,7 @@ export enum SpriteEventType {
  * @en Renders a sprite in the scene, supporting various rendering types like simple, sliced, tiled, and filled.
  * This component handles sprite frames, atlases, and material configurations for 2D graphics in Cocos Creator.
  * @zh 渲染场景中的精灵，支持简单、切片、平铺和填充等多种渲染类型。
- * 该组件处理精灵帧、图集和材质配置，用于Cocos Creator中的2D图形渲染。
+ * 该组件处理spriteFrame、图集和材质配置，用于Cocos Creator中的2D图形渲染。
  */
 @ccclass('cc.Sprite')
 @help('i18n:cc.Sprite')
@@ -156,7 +156,7 @@ export class Sprite extends UIRenderer {
 
     /**
      * @en The sprite frame used for rendering this sprite. Changing this updates the texture and size accordingly.
-     * @zh 用于渲染此精灵的精灵帧。更改此属性会相应更新纹理和尺寸。
+     * @zh 用于渲染此精灵的spriteFrame。更改此属性会相应更新纹理和尺寸。
      */
     @type(SpriteFrame)
     @displayOrder(5)
@@ -451,7 +451,7 @@ export class Sprite extends UIRenderer {
      * and registers sprite frame event listeners for sliced sprites.
      * This ensures the sprite is properly rendered when the component becomes active.
      * @zh 当组件启用时调用。激活材质，更新UV坐标，
-     * 并为切片精灵注册精灵帧事件监听器。
+     * 并为spriteFrame注册精灵帧事件监听器。
      * 这确保了组件激活时精灵能够正确渲染。
      */
     public onEnable (): void {
@@ -471,7 +471,7 @@ export class Sprite extends UIRenderer {
     /**
      * @en Called when the component is disabled. Cleans up sprite frame event listeners
      * to prevent memory leaks and unnecessary updates when the component is inactive.
-     * @zh 当组件禁用时调用。清理精灵帧事件监听器，
+     * @zh 当组件禁用时调用。清理spriteFrame事件监听器，
      * 以防止内存泄漏和组件非活动时的不必要更新。
      */
     public onDisable (): void {
