@@ -91,8 +91,8 @@ try {
  */
 class ScreenAdapter extends EventTarget {
     /**
-     * @description Indicates if the frame is rotated
-     * @description 指示帧是否已旋转
+     * @description Indicates if the game frame is currently rotated
+     * @description_zh 指示游戏框架当前是否旋转
      * @ai_context Frame rotation state for orientation handling
      * @ai_context_zh 用于方向处理的帧旋转状态
      */
@@ -134,7 +134,7 @@ class ScreenAdapter extends EventTarget {
      * @description Get device pixel ratio
      * @description 获取设备像素比
      * @returns {number} Device pixel ratio value
-     * @returns {number} 设备像素比值
+     * @returns {number} 设备像素比
      * @ai_context Platform-specific pixel ratio retrieval with WeChat special handling
      * @ai_context_zh 平台特定的像素比获取，微信有特殊处理
      */
@@ -170,8 +170,6 @@ class ScreenAdapter extends EventTarget {
         /**
          * @description Platform-specific size handling
          * @description 平台特定的尺寸处理
-         * @ai_context Different platforms require different size calculation methods
-         * @ai_context_zh 不同平台需要不同的尺寸计算方法
          */
         if (BYTEDANCE) {
             // ByteDance uses screen dimensions instead of window dimensions
@@ -210,7 +208,7 @@ class ScreenAdapter extends EventTarget {
 
     /**
      * @description Get current resolution
-     * @description 获取当前分辨率
+     * @description 获取分辨率
      * @returns {Size} Resolution size calculated from window size and scale
      * @returns {Size} 从窗口大小和缩放计算的分辨率大小
      * @ai_context Resolution is window size multiplied by resolution scale factor
@@ -276,7 +274,7 @@ class ScreenAdapter extends EventTarget {
 
     /**
      * @description Get safe area edge insets
-     * @description 获取安全区域边缘插入值
+     * @description 获取安全区
      * @returns {SafeAreaEdge} Safe area edge measurements
      * @returns {SafeAreaEdge} 安全区域边缘测量值
      * @ai_context Calculates safe area considering platform-specific DPR handling (VIVO uses physical pixels)
@@ -331,28 +329,14 @@ class ScreenAdapter extends EventTarget {
      */
     private _cbToUpdateFrameBuffer?: () => void;
 
-    /**
-     * @description Internal resolution scale storage
-     * @description 内部分辨率缩放存储
-     * @ai_context Private field storing the current resolution scale factor
-     * @ai_context_zh 存储当前分辨率缩放因子的私有字段
-     */
+    /** @private Current resolution scaling factor */
+    /** @private 分辨率缩放因子 */
     private _resolutionScale = 1;
 
-    /**
-     * @description Internal proportional to frame flag
-     * @description 内部与帧成比例标志
-     * @ai_context Private field for frame proportionality state
-     * @ai_context_zh 帧比例状态的私有字段
-     */
+    /** @private Whether container should scale proportionally to frame */
+    /** @private 是否按比例缩放 */
     private _isProportionalToFrame = false;
 
-    /**
-     * @description Constructor - Initialize screen adapter
-     * @description 构造函数 - 初始化屏幕适配器
-     * @ai_context Sets up event target and window resize listener for minigame platforms
-     * @ai_context_zh 为小游戏平台设置事件目标和窗口调整大小监听器
-     */
     constructor () {
         super();
         // Register window resize event listener if available
@@ -364,7 +348,7 @@ class ScreenAdapter extends EventTarget {
 
     /**
      * @description Initialize screen adapter with options
-     * @description 使用选项初始化屏幕适配器
+     * @description 初始化屏幕适配器
      * @param {IScreenOptions} options - Screen configuration options
      * @param {IScreenOptions} options - 屏幕配置选项
      * @param {() => void} cbToRebuildFrameBuffer - Callback to rebuild frame buffer
@@ -382,8 +366,6 @@ class ScreenAdapter extends EventTarget {
      * @description 请求全屏模式（不支持）
      * @returns {Promise<void>} Rejected promise with error
      * @returns {Promise<void>} 带有错误的被拒绝的Promise
-     * @ai_context Always rejects as minigame platforms don't support full screen
-     * @ai_context_zh 始终拒绝，因为小游戏平台不支持全屏
      */
     public requestFullScreen (): Promise<void> {
         return Promise.reject(new Error(getError(9008)));
@@ -394,8 +376,6 @@ class ScreenAdapter extends EventTarget {
      * @description 退出全屏模式（不支持）
      * @returns {Promise<void>} Rejected promise with error
      * @returns {Promise<void>} 带有错误的被拒绝的Promise
-     * @ai_context Always rejects as minigame platforms don't support full screen
-     * @ai_context_zh 始终拒绝，因为小游戏平台不支持全屏
      */
     public exitFullScreen (): Promise<void> {
         return Promise.reject(new Error(getError(9009)));

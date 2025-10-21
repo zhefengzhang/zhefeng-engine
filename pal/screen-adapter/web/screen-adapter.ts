@@ -325,7 +325,7 @@ class ScreenAdapter extends EventTarget {
     /**
      * @getter orientation
      * @description Gets the current orientation setting
-     * @description_zh 获取当前方向设置
+     * @description_zh 获取当前屏幕方向
      * @returns {Orientation} Current orientation mode
      * @returns_zh {Orientation} 当前方向模式
      */
@@ -440,7 +440,7 @@ class ScreenAdapter extends EventTarget {
     private _cachedContainerStyle: ICachedStyle = { width: '0px', height: '0px' };
 
     /** @private Callback to trigger framebuffer updates */
-    /** @private 触发帧缓冲区更新的回调 */
+    /** @private 更新帧缓冲区的回调函数 */
     private _cbToUpdateFrameBuffer?: () => void;
 
     /** @private Whether browser supports fullscreen API */

@@ -327,7 +327,7 @@ class ScreenAdapter extends EventTarget {
     public set isProportionalToFrame (v: boolean) { }
 
     /** @private Callback to trigger framebuffer updates */
-    /** @private 帧缓冲区更新的回调 */
+    /** @private 更新帧缓冲区的回调函数 */
     private _cbToUpdateFrameBuffer?: () => void;
 
     /** @private Current resolution scaling factor */
