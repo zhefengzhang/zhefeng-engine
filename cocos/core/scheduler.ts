@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /*
  Copyright (c) 2013-2016 Chukong Technologies Inc.
  Copyright (c) 2017-2023 Xiamen Yaji Software Co., Ltd.
@@ -67,12 +68,10 @@ export interface ISchedulable {
 
     /**
      * @en UUID for the schedulable object.
-     * Alternative unique identifier that can be used instead of or alongside the id.
-     * Commonly used for objects that already have a UUID from other systems.
+     * That can be used instead of id.
      *
      * @zh 可调度对象的 UUID。
-     * 可以代替或与 id 一起使用的替代唯一标识符。
-     * 通常用于已经从其他系统获得 UUID 的对象。
+     * 可以代替id 使用。
      */
     uuid?: string;
 
@@ -82,7 +81,7 @@ export interface ISchedulable {
      * the object to perform per-frame logic updates.
      *
      * @zh 由调度器每帧调用的更新方法。
-     * 此方法在调度器的更新周期中被调用，允许对象执行每帧的逻辑更新。
+     * 此方法在调度器中被调用，允许对象执行每帧的逻辑更新。
      *
      * @param dt
      * @en Delta time in seconds since the last frame.
@@ -101,8 +100,8 @@ export interface ISchedulable {
  * It manages objects that need to receive update calls every frame with specific priority ordering.
  * Uses object pooling pattern for optimal memory management and performance.
  *
- * @zh 用于"优先更新"的列表条目。
- * 此类表示调度器基于优先级的更新列表中的一个条目。
+ * @zh 用于"优先更新"的entry列表。
+ * 此类表示调度器基于优先级的更新列表中的一个entry。
  * 它管理需要以特定优先级顺序每帧接收更新调用的对象。
  * 使用对象池模式以实现最佳的内存管理和性能。
  *
@@ -140,11 +139,9 @@ class ListEntry {
 
     /**
      * @en Return a ListEntry instance to the object pool for reuse.
-     * Cleans up the entry and adds it back to the pool if there's space.
      * This helps maintain a pool of reusable objects to reduce memory allocation.
      *
      * @zh 将 ListEntry 实例返回到对象池以供重用。
-     * 清理条目并在有空间时将其添加回池中。
      * 这有助于维护可重用对象池以减少内存分配。
      *
      * @param entry The ListEntry instance to return to the pool
@@ -174,11 +171,9 @@ class ListEntry {
     /**
      * @en Priority value determining the order of execution.
      * Lower values execute first: negative priority < 0 priority < positive priority.
-     * This allows fine-grained control over update order.
      *
      * @zh 决定执行顺序的优先级值。
      * 较低的值先执行：负优先级 < 0优先级 < 正优先级。
-     * 这允许对更新顺序进行细粒度控制。
      */
     public priority: number;
 
@@ -186,7 +181,7 @@ class ListEntry {
      * @en Whether this entry is currently paused and should skip updates.
      * When paused, the target's update method will not be called.
      *
-     * @zh 此条目当前是否已暂停并应跳过更新。
+     * @zh 此entry当前是否已暂停并应跳过更新。
      * 暂停时，目标的更新方法将不会被调用。
      */
     public paused: boolean;
@@ -195,8 +190,8 @@ class ListEntry {
      * @en Whether this entry is marked for deletion and should be removed.
      * When marked for deletion, the entry will be removed at the end of the current update cycle.
      *
-     * @zh 此条目是否标记为删除并应被移除。
-     * 标记为删除时，条目将在当前更新周期结束时被移除。
+     * @zh 是否标记为删除并应被移除。
+     * 标记为删除时，entry将在当前更新周期结束时被移除。
      */
     public markedForDeletion: boolean;
 
@@ -205,7 +200,7 @@ class ListEntry {
      * Initializes all properties with the provided values to create a fully configured entry.
      *
      * @zh 创建新的 ListEntry 实例。
-     * 使用提供的值初始化所有属性以创建完全配置的条目。
+     * 使用提供的值初始化所有属性以创建完全配置的entry。
      *
      * @param target
      * @en Target object that implements ISchedulable interface.
@@ -218,22 +213,22 @@ class ListEntry {
      * @en The execution priority for this entry.
      * Lower values execute before higher values.
      *
-     * @zh 此条目的执行优先级。
+     * @zh 此entry的执行优先级。
      * 较低的值在较高的值之前执行。
      *
      * @param paused
      * @en Whether this entry should start in a paused state.
      * Paused entries skip update calls until resumed.
      *
-     * @zh 此条目是否应以暂停状态开始。
-     * 暂停的条目跳过更新调用直到恢复。
+     * @zh 此entry是否应以暂停状态开始。
+     * 暂停的entry跳过更新调用直到恢复。
      *
      * @param markedForDeletion
      * @en Whether this entry is marked for deletion.
      * Marked entries will be removed at the end of the next update cycle.
      *
-     * @zh 此条目是否标记为删除。
-     * 标记的条目将在下一个更新周期结束时被移除。
+     * @zh 此entry是否标记为删除。
+     * 标记的entry将在下一个更新周期结束时被移除。
      */
     constructor (target: ISchedulable, priority: number, paused: boolean, markedForDeletion: boolean) {
         this.target = target;
@@ -249,8 +244,8 @@ class ListEntry {
  * efficient management of callbacks with different priorities for the same object.
  * Uses object pooling pattern for memory efficiency.
  *
- * @zh 用于管理不同优先级更新回调的哈希表条目。
- * 此类为单个目标组织多个更新条目，允许
+ * @zh 用于管理不同优先级更新回调的哈希表entry。
+ * 此类为单个对象绑定多个更新entry，
  * 高效管理同一对象的不同优先级回调。
  * 使用对象池模式以提高内存效率。
  *
@@ -273,11 +268,11 @@ class HashUpdateEntry {
      *
      * @param list
      * @en The list of entries that this hash entry belongs to.
-     * @zh 此哈希条目所属的条目列表。
+     * @zh 此哈希entry所属的entry列表。
      *
      * @param entry
      * @en The specific list entry being managed.
-     * @zh 正在管理的特定列表条目。
+     * @zh 正在管理的特定列表entry。
      *
      * @param target
      * @en The schedulable target object (used as hash key).
@@ -309,7 +304,7 @@ class HashUpdateEntry {
      * Clears all references to prevent memory leaks before pooling.
      *
      * @zh 将 HashUpdateEntry 实例返回到对象池以供重用。
-     * 在池化之前清除所有引用以防止内存泄漏。
+     * 在回收之前清除所有引用以防止内存泄漏。
      *
      * @param entry
      * @en The HashUpdateEntry instance to return to the pool.
@@ -335,7 +330,7 @@ class HashUpdateEntry {
      * @en The list of entries that this hash entry belongs to.
      * Contains all ListEntry objects for the same target with different priorities.
      *
-     * @zh 此哈希条目所属的条目列表。
+     * @zh 此哈希entry所属的entry列表。
      * 包含同一目标的所有不同优先级的 ListEntry 对象。
      */
     public list: ListEntry[] | null;
@@ -344,8 +339,8 @@ class HashUpdateEntry {
      * @en The specific list entry being managed by this hash entry.
      * Points to the current entry being processed during updates.
      *
-     * @zh 此哈希条目管理的特定列表条目。
-     * 指向更新期间正在处理的当前条目。
+     * @zh 此哈希entry管理的特定列表entry。
+     * 指向更新期间正在处理的当前entry。
      */
     public entry: ListEntry | null;
 
@@ -363,7 +358,7 @@ class HashUpdateEntry {
      * This function is called when the scheduler processes this entry.
      *
      * @zh 更新期间要执行的回调函数。
-     * 当调度器处理此条目时调用此函数。
+     * 当调度器处理此entry时调用此函数。
      */
     public callback: AnyFunction | null;
 
@@ -376,11 +371,11 @@ class HashUpdateEntry {
      *
      * @param list
      * @en The list of entries that this hash entry will belong to.
-     * @zh 此哈希条目将属于的条目列表。
+     * @zh 此哈希entry将属于的entry列表。
      *
      * @param entry
      * @en The specific list entry to be managed.
-     * @zh 要管理的特定列表条目。
+     * @zh 要管理的特定列表entry。
      *
      * @param target
      * @en The schedulable target object.
@@ -415,8 +410,7 @@ class HashUpdateEntry {
  * at specific intervals, providing efficient management of timed operations.
  * Uses object pooling pattern for memory efficiency.
  *
- * @zh 用于管理基于定时器的间隔回调的哈希表条目。
- * 此类为按特定间隔执行的调度函数组织定时器回调，
+ * @zh 用于管理基于定时器的间隔回调的哈希表entry。
  * 提供定时操作的高效管理。
  * 使用对象池模式以提高内存效率。
  *
@@ -440,8 +434,8 @@ class HashTimerEntry {
      * @param target - The target object (hash key, retained) / 目标对象（哈希键，保留）
      * @param timerIndex - Index of the current timer / 当前定时器的索引
      * @param currentTimer - Current active timer / 当前活动定时器
-     * @param currentTimerSalvaged - Whether current timer is salvaged / 当前定时器是否已被拯救
-     * @param paused - Whether the entry is paused / 条目是否暂停
+     * @param currentTimerSalvaged - Whether current timer is salvaged / 当前定时器是否已被回收
+     * @param paused - Whether the entry is paused / entry是否暂停
      * @returns A HashTimerEntry instance / HashTimerEntry实例
      */
     public static get (timers: CallbackTimer[] | null, target: ISchedulable, timerIndex: number, currentTimer: CallbackTimer | null, currentTimerSalvaged: boolean, paused: boolean): HashTimerEntry {
@@ -461,9 +455,9 @@ class HashTimerEntry {
 
     /**
      * @en Return a HashTimerEntry instance to the object pool for reuse.
-     * This method cleans up the entry and adds it back to the pool if there's space.
+     * This method cleans up the entry references and recycles it.
      * @zh 将HashTimerEntry实例返回到对象池以供重用。
-     * 此方法清理条目并在有空间时将其添加回池中。
+     * 此方法清理entry相关引用并回收。
      *
      * @param entry - The HashTimerEntry instance to return / 要返回的HashTimerEntry实例
      */
@@ -483,7 +477,7 @@ class HashTimerEntry {
 
     /**
      * @en Array of callback timers associated with this entry.
-     * @zh 与此条目关联的回调定时器数组。
+     * @zh 与此entry关联的回调定时器数组。
      */
     public timers: CallbackTimer[] | null;
 
@@ -507,13 +501,13 @@ class HashTimerEntry {
 
     /**
      * @en Flag indicating whether the current timer has been salvaged during iteration.
-     * @zh 标志，指示当前定时器在迭代期间是否已被拯救。
+     * @zh 标志，指示当前定时器在迭代期间是否已被回收。
      */
     public currentTimerSalvaged: boolean;
 
     /**
      * @en Flag indicating whether this timer entry is paused.
-     * @zh 标志，指示此定时器条目是否暂停。
+     * @zh 标志，指示此定时器entry是否暂停。
      */
     public paused: boolean;
 
@@ -521,14 +515,14 @@ class HashTimerEntry {
      * @en Constructor for HashTimerEntry.
      * Initializes a new timer entry with the provided parameters.
      * @zh HashTimerEntry的构造函数。
-     * 使用提供的参数初始化新的定时器条目。
+     * 使用提供的参数初始化新的定时器entry。
      *
      * @param timers - Array of callback timers / 回调定时器数组
      * @param target - The target object / 目标对象
      * @param timerIndex - Index of the current timer / 当前定时器的索引
      * @param currentTimer - Current active timer / 当前活动定时器
-     * @param currentTimerSalvaged - Whether current timer is salvaged / 当前定时器是否已被拯救
-     * @param paused - Whether the entry is paused / 条目是否暂停
+     * @param currentTimerSalvaged - Whether current timer is salvaged / 当前定时器是否已被回收
+     * @param paused - Whether the entry is paused / entry是否暂停
      */
     constructor (timers: CallbackTimer[] | null, target: ISchedulable, timerIndex: number, currentTimer: CallbackTimer | null, currentTimerSalvaged: boolean, paused: boolean) {
         this.timers = timers;
@@ -547,7 +541,7 @@ type CallbackType = (dt?: number) => void;
  * This class provides efficient timer functionality with object pooling for memory optimization.
  * Supports both repeating and one-time callbacks with customizable intervals and delays.
  *
- * @zh 用于管理带间隔和延迟的调度回调的轻量级定时器类。
+ * @zh 用于管理带间隔和延迟的回调的轻量级定时器类。
  * 此类提供高效的定时器功能，并使用对象池进行内存优化。
  * 支持可自定义间隔和延迟的重复和一次性回调。
  *
@@ -575,9 +569,9 @@ class CallbackTimer {
 
     /**
      * @en Return a CallbackTimer instance to the object pool for reuse.
-     * Only returns to pool if not locked and pool has space.
+     * This method cleans up the entry references and recycles it.
      * @zh 将CallbackTimer实例返回到对象池以供重用。
-     * 仅在未锁定且池有空间时返回到池中。
+     * 此方法清理entry相关引用并回收。
      * @param timer - The CallbackTimer instance to return / 要返回的CallbackTimer实例
      */
     public static put (timer: CallbackTimer): void {
@@ -589,21 +583,21 @@ class CallbackTimer {
 
     /**
      * @en Lock flag to prevent timer from being returned to pool during execution.
-     * @zh 锁定标志，防止定时器在执行期间被返回到池中。
+     * @zh 锁定标志，防止定时器在执行期间被回收。
      * @private
      */
     private _lock: boolean;
 
     /**
      * @en Reference to the scheduler that manages this timer.
-     * @zh 管理此定时器的调度器引用。
+     * @zh 管理此定时器的调度器。
      * @private
      */
     private _scheduler: Scheduler | null;
 
     /**
      * @en Elapsed time since timer started or last execution.
-     * @zh 自定时器启动或上次执行以来的经过时间。
+     * @zh 自定时器启动或上次执行以来的运行时间（秒）。
      * @private
      */
     private _elapsed: number;
@@ -617,7 +611,7 @@ class CallbackTimer {
 
     /**
      * @en Flag indicating whether timer should use initial delay.
-     * @zh 标志，指示定时器是否应使用初始延迟。
+     * @zh 标志，指示定时器是否应使用延迟。
      * @private
      */
     private _useDelay: boolean;
@@ -688,7 +682,7 @@ class CallbackTimer {
      * @en Initialize the timer with callback function and scheduling parameters.
      * This method sets up the timer for execution with specified interval, repeat count, and delay.
      * @zh 使用回调函数和调度参数初始化定时器。
-     * 此方法设置定时器以指定的间隔、重复次数和延迟执行。
+     * 此方法设置定时器的间隔、重复次数和延迟执行。
      *
      * @param scheduler - The scheduler that manages this timer / 管理此定时器的调度器
      * @param callback - The callback function to execute / 要执行的回调函数
@@ -716,9 +710,6 @@ class CallbackTimer {
     /**
      * @en get interval for timer in seconds.
      * @zh 获取计时器的时间间隔, 以秒为单位。
-     * @returns
-     * @en returns interval of timer in seconds.
-     * @zh 返回计时器的时间间隔, 以秒为单位。
      */
     public getInterval (): number {
         return this._interval;
@@ -786,8 +777,7 @@ class CallbackTimer {
      * This method executes the callback with the target object and elapsed time.
      * Sets lock during execution to prevent pool return.
      * @zh 触发定时器的回调函数。
-     * 此方法使用目标对象和经过时间执行回调。
-     * 在执行期间设置锁定以防止返回池。
+     * 在执行期间锁定以防止被回收。
      */
     public trigger (): void {
         if (this._target && this._callback) {
@@ -886,7 +876,7 @@ export class Scheduler extends System {
      * **Important:** Call this method before scheduling any tasks for the target.
      *
      * @zh
-     * 为目标对象启用调度器管理，确保其具有唯一标识符。
+     * 目标对象启用调度器管理，确保其具有唯一标识符。
      * 在对目标对象使用任何调度器 API 之前必须调用此方法。
      * 如果目标对象没有 'uuid' 或 'id' 属性，会自动分配一个唯一 ID。
      *
@@ -1062,7 +1052,7 @@ export class Scheduler extends System {
     /**
      * @en Specify the callback to schedule a new timer.
      * If the callback function is already scheduled, then only the interval parameter will be updated without re-scheduling it again.
-     * @zh 指定回调函数来规划一个新的定时器。
+     * @zh 指定回调函数来创建一个新的定时器。
      * 如果回调函数已经被定时器使用，那么只会更新之前定时器的时间间隔参数，不会设置新的定时器。
      * @param callback
      * @en The specified target.
@@ -1466,7 +1456,7 @@ export class Scheduler extends System {
     /**
      * @en Checks whether a callback for a given target is scheduled.
      * @zh 检查指定的回调函数和回调对象组合是否存在定时器。
-     * @param callback @en The callback to check. @zh 指定检测的回调。
+     * @param callback @en The callback function. @zh 回调函数。
      * @param target @en The target of the callback. @zh 回调的目标对象。
      * @returns @en True if the specified callback is invoked, false if not. @zh 返回true如果指定回调被调用, 否则返回false。
      */
