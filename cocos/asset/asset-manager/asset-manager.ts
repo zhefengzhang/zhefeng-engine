@@ -102,7 +102,6 @@ export interface IAssetManagerOptions {
     /**
      * @en
      * Remote server base URL for downloading assets.
-     * Should not include trailing slash.
      *
      * @zh
      * 用于下载资源的远程服务器基础 URL。
