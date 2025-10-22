@@ -47,13 +47,27 @@ const _tempVec2 = new Vec2();
  */
 enum SizeMode {
     /**
-     * @en Each page is unified in size.
-     * @zh 每个页面统一大小。
+     * @en
+     * Each page maintains a unified size equal to the PageView container size.
+     * All pages will be automatically resized to match the container dimensions.
+     * Best for consistent layout and uniform page appearance.
+     *
+     * @zh
+     * 每个页面保持统一大小，等于 PageView 容器大小。
+     * 所有页面将自动调整大小以匹配容器尺寸。
+     * 适用于一致的布局和统一的页面外观。
      */
     Unified = 0,
     /**
-     * @en Each page is in free size.
-     * @zh 每个页面大小随意。
+     * @en
+     * Each page can have its own individual size.
+     * Pages maintain their original dimensions without automatic resizing.
+     * Useful for displaying content with varying sizes or custom layouts.
+     *
+     * @zh
+     * 每个页面可以有自己的独立大小。
+     * 页面保持原始尺寸，不进行自动调整。
+     * 适用于显示不同大小的内容或自定义布局。
      */
     Free = 1,
 }
@@ -91,10 +105,15 @@ enum PageViewEventType {
 
 /**
  * @en
- * The PageView control.
+ * PageView component for creating swipeable page-based interfaces.
+ * Extends ScrollView to provide page-by-page navigation with smooth transitions.
+ * Supports both horizontal and vertical scrolling with customizable page sizing.
  *
  * @zh
- * 页面视图组件。
+ * 页面视图组件，用于创建可滑动的基于页面的界面。
+ * 扩展 ScrollView 以提供逐页导航和平滑过渡效果。
+ * 支持水平和垂直滚动，具有可自定义的页面大小。
+ *
  */
 @ccclass('cc.PageView')
 @help('i18n:cc.PageView')
@@ -103,10 +122,20 @@ enum PageViewEventType {
 export class PageView extends ScrollView {
     /**
      * @en
-     * Specify the size type of each page in PageView.
+     * The size mode that determines how pages are sized within the PageView.
+     * Controls whether all pages maintain uniform dimensions or can have individual sizes.
+     * When changed, automatically triggers layout synchronization to apply the new sizing behavior.
+     *
+     * - Unified: All pages are resized to match the PageView container dimensions
+     * - Free: Pages maintain their original sizes without automatic resizing
      *
      * @zh
-     * 页面视图中每个页面大小类型。
+     * 页面大小模式，决定 PageView 中页面的尺寸处理方式。
+     * 控制所有页面是否保持统一尺寸或可以有独立大小。
+     * 更改时会自动触发布局同步以应用新的大小。
+     *
+     * - Unified: 所有页面调整为与 PageView 容器尺寸匹配
+     * - Free: 页面保持原始大小，不进行自动调整
      */
     @type(SizeMode)
     @tooltip('i18n:pageview.sizeMode')
@@ -125,10 +154,18 @@ export class PageView extends ScrollView {
 
     /**
      * @en
-     * The page view direction.
+     * The scrolling direction of the PageView component.
+     * Determines the axis along which pages are arranged and the direction of page transitions.
+     *
+     * - HORIZONTAL: Pages scroll left-right, arranged horizontally
+     * - VERTICAL: Pages scroll up-down, arranged vertically
      *
      * @zh
-     * 页面视图滚动类型。
+     * PageView 组件的滚动方向。
+     * 决定页面排列的轴向和页面切换的方向。
+     *
+     * - HORIZONTAL: 页面左右滚动，水平排列
+     * - VERTICAL: 页面上下滚动，垂直排列
      */
     @type(PageViewDirection)
     @tooltip('i18n:pageview.direction')
@@ -192,10 +229,14 @@ export class PageView extends ScrollView {
 
     /**
      * @en
-     * The Page View Indicator.
+     * Reference to the PageViewIndicator component that provides visual feedback for page navigation.
+     * When set, automatically establishes bidirectional communication between PageView and indicator.
+     * Set to null to disable indicator functionality.
      *
      * @zh
-     * 页面视图指示器组件。
+     * 页面视图指示器。
+     * 设置时会自动建立 PageView 和指示器之间的双向关联。
+     * 设置为 null 可禁用指示器功能。
      */
     @type(PageViewIndicator)
     @tooltip('i18n:pageview.indicator')
@@ -214,6 +255,17 @@ export class PageView extends ScrollView {
         }
     }
 
+    /**
+     * @en
+     * Gets the current page index.
+     * Returns the zero-based index of the currently active page.
+     * Use setCurrentPageIndex() or scrollToPage() to change the current page.
+     *
+     * @zh
+     * 获取当前页面索引。
+     * 返回当前活动页面的从零开始的索引。
+     * 使用 setCurrentPageIndex() 或 scrollToPage() 来更改当前页面。
+     */
     get curPageIdx (): number {
         return this._curPageIdx;
     }
@@ -229,8 +281,15 @@ export class PageView extends ScrollView {
      */
     public static Direction = PageViewDirection;
     /**
-     * @en Enum for Page View event.
-     * @zh 页面视图事件枚举
+     * @en
+     * PageView event enum.
+     * Extends ScrollView events with PageView-specific events like PAGE_TURNING.
+     * Use this for type-safe event handling and registration.
+     *
+     * @zh
+     * 页面视图事件枚举。
+     * 在 ScrollView 事件基础上扩展 PageView 特定事件，如 PAGE_TURNING。
+     * 用于类型安全的事件处理和注册。
      */
     public static EventType = extendsEnum(PageViewEventType, ScrollEventType);
 
@@ -397,12 +456,25 @@ export class PageView extends ScrollView {
 
     /**
      * @en
-     * Returns current page index.
+     * Retrieves the index of the currently active page.
+     * This method returns the zero-based index of the page that is currently
+     * displayed or being transitioned to in the PageView.
+     *
+     * @returns The current page index (0-based)
      *
      * @zh
-     * 返回当前页面索引。
+     * 获取当前页面的索引。
+     * 此方法返回当前在 PageView 中显示或正在切换到的页面的从零开始的索引。
      *
-     * @returns @en Current page index of this page view. @zh 当前页面索引。
+     * @returns 当前页面索引（从 0 开始）
+     *
+     * @example
+     * ```typescript
+     * import { PageView } from 'cc';
+     * const pageView = this.getComponent(PageView);
+     * const currentIndex = pageView.getCurrentPageIndex();
+     * console.log(`当前在第 ${currentIndex + 1} 页`);
+     * ```
      */
     public getCurrentPageIndex (): number {
         return this._curPageIdx;
@@ -415,6 +487,12 @@ export class PageView extends ScrollView {
      * @zh
      * 设置当前页面索引。
      * @param index @en The page index to scroll to. @zh 需要滚动到的页面索引。
+     *
+     * @example
+     * ```typescript
+     * import { PageView } from 'cc';
+     * const pageView = this.getComponent(PageView);
+     * pageView.setCurrentPageIndex(2); // 导航到第 3 页
      */
     public setCurrentPageIndex (index: number): void {
         this.scrollToPage(index, 1);
@@ -438,9 +516,19 @@ export class PageView extends ScrollView {
      * At the end of the current page view to insert a new view.
      *
      * @zh
-     * 在当前页面视图的尾部插入一个新视图。
+     * 在 PageView 的末尾追加一个新页面。
+     * 此方法将页面节点添加为 PageView 中的最后一页。
+     * 页面将根据当前的尺寸模式自动调整大小和位置。
      *
      * @param page @en New page to add to this page view. @zh 新加入的视图。
+     * @example
+     * ```typescript
+     * import { PageView } from 'cc';
+     * const pageView = this.getComponent(PageView);
+     * const newPage = new Node('NewPage');
+     * // Configure the new page...
+     * pageView.addPage(newPage);
+     * ```
      */
     public addPage (page: Node): void {
         if (!page || this._pages.indexOf(page) !== -1 || !this.content) {
@@ -464,6 +552,13 @@ export class PageView extends ScrollView {
      *
      * @param page @en New page to insert to this page view. @zh 新插入的视图。
      * @param index @en The index of new page to be inserted. @zh 新插入视图的索引。
+     * @example
+     * ```typescript
+     * import { PageView } from 'cc';
+     * const pageView = this.getComponent(PageView);
+     * const newPage = new Node('InsertedPage');
+     * pageView.insertPage(newPage, 1); // Insert as the 2nd page
+     * ```
      */
     public insertPage (page: Node, index: number): void {
         if (index < 0 || !page || this._pages.indexOf(page) !== -1 || !this.content) {
@@ -491,6 +586,15 @@ export class PageView extends ScrollView {
      * 移除指定页面。
      *
      * @param page @en The page to be removed. @zh 将被移除的页面。
+     * @example
+     * ```typescript
+     * import { PageView } from 'cc';
+     * const pageView = this.getComponent(PageView);
+     * const pages = pageView.getPages();
+     * if (pages.length > 1) {
+     *     pageView.removePage(pages[0]); // Remove first page
+     * }
+     * ```
      */
     public removePage (page: Node): void {
         if (!page || !this.content) { return; }
@@ -510,6 +614,13 @@ export class PageView extends ScrollView {
      * 移除指定下标的页面。
      *
      * @param index @en The index of the page to be removed. @zh 将被移除界面的页面下标。
+     * @example
+     * ```typescript
+     * import { PageView } from 'cc';
+     * const pageView = this.getComponent(PageView);
+     * pageView.removePageAtIndex(2); // Remove the 3rd page
+     * ```
+     *
      */
     public removePageAtIndex (index: number): void {
         const pageList = this._pages;
@@ -527,6 +638,12 @@ export class PageView extends ScrollView {
      *
      * @zh
      * 移除所有页面。
+     * @example
+     * ```typescript
+     * import { PageView } from 'cc';
+     * const pageView = this.getComponent(PageView);
+     * pageView.removeAllPages(); // Clear all pages
+     * ```
      */
     public removeAllPages (): void {
         if (!this.content) { return; }
@@ -547,6 +664,20 @@ export class PageView extends ScrollView {
      *
      * @param idx @en The index of page to be scroll to. @zh 希望滚动到的页面下标。
      * @param timeInSecond @en How long time to scroll to the page, in seconds. @zh 滚动到指定页面所需时间，单位：秒。
+     * @example
+     * ```typescript
+     * import { PageView } from 'cc';
+     * const pageView = this.getComponent(PageView);
+     *
+     * // Quick navigation (0.1 seconds)
+     * pageView.scrollToPage(2, 0.1);
+     *
+     * // Slow navigation (1 second)
+     * pageView.scrollToPage(0, 1.0);
+     *
+     * // Default speed navigation
+     * pageView.scrollToPage(1);
+     * ```
      */
     public scrollToPage (idx: number, timeInSecond = 0.3): void {
         if (idx < 0 || idx >= this._pages.length) {
