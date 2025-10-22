@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /*
  Copyright (c) 2008-2010 Ricardo Quesada
  Copyright (c) 2011-2012 cocos2d-x.org
@@ -141,6 +142,10 @@ export class View extends Eventify(System) {
      * @zh 设置当发现浏览器的尺寸改变时，是否自动调整 canvas 尺寸大小。
      * 仅在 Web 模式下有效。
      * @param enabled - Whether enable automatic resize with browser's resize event
+     * @example
+     * ```ts
+     * view.resizeWithBrowserSize(true);
+     * ```
      */
     public resizeWithBrowserSize (enabled: boolean): void {
         screenAdapter.handleResizeEvent = enabled;
@@ -178,6 +183,10 @@ export class View extends Eventify(System) {
      * `view` 会自动用 CSS 旋转游戏场景的 canvas，
      * 这个方法不会对 native 部分产生任何影响，对于 native 而言，你需要在应用设置中的设置排版。
      * @param orientation - Possible values: macro.ORIENTATION_LANDSCAPE | macro.ORIENTATION_PORTRAIT | macro.ORIENTATION_AUTO
+     * @example
+     * ```ts
+     * view.setOrientation(macro.ORIENTATION_LANDSCAPE);
+     * ```
      */
     public setOrientation (orientation: number): void {
         screenAdapter.orientation = orientationMap[orientation];
@@ -239,6 +248,15 @@ export class View extends Eventify(System) {
      * @param enabled - Enable or disable auto full screen on mobile devices
      *
      * @deprecated since v3.3, please use screen.requestFullScreen() instead.
+     * @example
+     * ```ts
+     * view.enableAutoFullScreen(true);
+     *
+     * // Recommended
+     * screen.requestFullScreen().catch(() => {
+     *   // handle error
+     * });
+     * ```
      */
     public enableAutoFullScreen (enabled: boolean): void {
         if (enabled === this._autoFullScreen) {
