@@ -804,9 +804,9 @@ class EqualToFrame extends ContainerStrategy {
 }
 
 /**
-     * @class ProportionalToFrame
-     * @extends ContainerStrategy
-     */
+ * @class ProportionalToFrame
+ * @extends ContainerStrategy
+ */
 class ProportionalToFrame extends ContainerStrategy {
     public name = 'ProportionalToFrame';
     constructor () {
