@@ -794,12 +794,22 @@ export class Widget extends Component {
 
     /**
      * @en
-     * Immediately perform the widget alignment. You need to manually call this method only if
-     * you need to get the latest results after the alignment before the end of current frame.
+     * Force an immediate alignment of this widget's node.
+     * Alignment usually runs at the end of the frame by the manager.
+     * Call this when you need aligned position/size within the same frame.
+     * Notes:
+     * - Executes synchronously in parent → child order.
+     * - Respects current `alignMode`; the mode is not changed.
+     * - Safe to call multiple times in a single frame.
      *
      * @zh
-     * 立刻执行 widget 对齐操作。这个接口一般不需要手工调用。
-     * 只有当你需要在当前帧结束前获得 widget 对齐后的最新结果时才需要手动调用这个方法。
+     * 立即对当前 Widget 的节点执行一次对齐。
+     * 常规对齐由管理器在帧末统一进行；当你需要在本帧内
+     * 立即获得对齐后的坐标/尺寸时，调用本方法。
+     * 说明：
+     * - 同步执行，并按父 → 子顺序布局。
+     * - 遵循当前 `alignMode`，调用不会改变模式。
+     * - 同一帧可多次调用以刷新结果。
      *
      * @example
      * ```ts
@@ -832,6 +842,25 @@ export class Widget extends Component {
         }
     }
 
+    /**
+     * @en
+     * Request re-alignment by marking this widget dirty.
+     * The actual alignment will be performed by the widget manager
+     * at frame end or on window resize according to `alignMode`.
+     * Call this after changing margins, alignment flags, or target.
+     *
+     * @zh
+     * 将本组件标记为需要重新对齐。实际对齐会在帧末或窗口大小变化时，
+     * 由 Widget 管理器根据 `alignMode` 统一执行。
+     * 在修改边距、对齐标志或对齐目标后调用此方法。
+     *
+     * @returns {void}
+     * @example
+     * ```ts
+     * widget.left = 20;
+     * widget.setDirty();
+     * ```
+     */
     public setDirty (): void {
         this._recursiveDirty();
     }
