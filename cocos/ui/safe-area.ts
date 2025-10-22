@@ -60,6 +60,37 @@ import { view } from './view';
 @menu('UI/SafeArea')
 @requireComponent(Widget)
 export class SafeArea extends Component {
+    /**
+     * @en
+     * Controls whether to use symmetric safe area handling.
+     *
+     * Symmetric mode (`true`):
+     * - Applies the same insets to paired sides (landscape: left/right; portrait: top/bottom)
+     * - Keeps UI visually centered and balanced
+     * - Recommended for most UI layouts focusing on aesthetic symmetry
+     *
+     * Asymmetric mode (`false`):
+     * - Uses actual device-specific insets per side
+     * - Maximizes usable space when notch or indicators only affect one side
+     * - Suitable for content-heavy layouts needing precision
+     *
+     * Default: `true`
+     *
+     * @zh
+     * 是否采用对称安全区域处理。
+     *
+     * 对称模式（`true`）：
+     * - 对成对边进行相同的内边距（横屏：左右；竖屏：上下）
+     * - 保持 UI 居中和平衡
+     * - 适用于大多数强调视觉对称的布局
+     *
+     * 非对称模式（`false`）：
+     * - 按设备实际情况分别设置各边内边距
+     * - 当刘海或系统指示器仅影响一侧时可最大化可用空间
+     * - 适用于内容密集、需要精确适配的布局
+     *
+     * 默认值：`true`
+     */
     @visible(true)
     @tooltip('i18n:safe_area.symmetric')
     get symmetric (): boolean {
@@ -75,6 +106,27 @@ export class SafeArea extends Component {
         super();
     }
 
+    /**
+     * @en
+     * Lifecycle: called when the component becomes enabled.
+     * - Applies initial safe-area layout via `updateArea()`
+     * - Subscribes to screen changes for real-time adaptation:
+     *   - `window-resize`: browser or desktop window resizing
+     *   - `orientation-change`: mobile device rotation
+     *
+     * Notes:
+     * - On native platforms, callbacks may need delaying (implementation comment).
+     *
+     * @zh
+     * 生命周期：组件启用时调用。
+     * - 通过 `updateArea()` 应用初始安全区域布局
+     * - 注册屏幕变化以实时适配：
+     *   - `window-resize`：浏览器或桌面窗口尺寸变化
+     *   - `orientation-change`：移动设备旋转
+     *
+     * 说明：
+     * - 原生平台可能需要延迟处理回调（实现层注释）。
+     */
     public onEnable (): void {
         this.updateArea();
         // IDEA: need to delay the callback on Native platform ?
@@ -82,18 +134,53 @@ export class SafeArea extends Component {
         screenAdapter.on('orientation-change', this.updateArea, this);
     }
 
+    /**
+     * @en
+     * Lifecycle: called when the component is disabled.
+     * - Unsubscribes previously registered screen change listeners
+     * - Pauses automatic safe-area updates; current layout remains
+     *
+     * @zh
+     * 生命周期：组件禁用时调用。
+     * - 取消注册之前添加的屏幕变化监听器
+     * - 暂停自动安全区域更新；保留当前布局
+     */
     public onDisable (): void {
         screenAdapter.off('window-resize', this.updateArea, this);
         screenAdapter.off('orientation-change', this.updateArea, this);
     }
 
     /**
-     * @en Adapt to safe area.
-     * @zh 立即适配安全区域。
-     * @method updateArea
+     * @en
+     * Immediately adapts the node's layout to the device safe area.
+     *
+     * Steps:
+     * 1) Check dependencies: `Widget` and `UITransform`
+     * 2) In editor: set all margins to 0 for consistent preview
+     * 3) At runtime:
+     *    - Fetch visible size and `sys.getSafeAreaRect(this._symmetric)`
+     *    - Compute top/bottom/left/right insets
+     *    - Preserve the node's visual position by adjusting anchor to offset alignment changes
+     * 4) Update alignment and register widget to manager
+     *
+     * @zh
+     * 立即适配安全区域
+     *
+     * 步骤：
+     * 1) 检查依赖：`Widget` 与 `UITransform`
+     * 2) 编辑器模式：统一将边距置为 0，便于预览
+     * 3) 运行时：
+     *    - 获取可视大小与 `sys.getSafeAreaRect(this._symmetric)`
+     *    - 计算上下左右边距
+     *    - 通过调整锚点抵消对齐变化，保持视觉位置不变
+     * 4) 更新对齐并将 Widget 注册到管理器
+     *
      * @example
-     * let safeArea = this.node.addComponent(cc.SafeArea);
+     * // Manual update
+     * import { SafeArea } from 'cc';
+     * const safeArea = this.node.addComponent(SafeArea);
      * safeArea.updateArea();
+     *
      */
     public updateArea (): void {
         // TODO Remove Widget dependencies in the future
