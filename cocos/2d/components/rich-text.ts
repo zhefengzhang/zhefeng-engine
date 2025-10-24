@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /*
  Copyright (c) 2013-2016 Chukong Technologies Inc.
  Copyright (c) 2017-2023 Xiamen Yaji Software Co., Ltd.
@@ -143,10 +144,42 @@ interface ISegment {
 
 /**
  * @en
- * The RichText Component.
+ * RichText component.
+ * It parses the `string` into segments, applies styles (color, bold, italic, underline, outline, size, font),
+ * performs line-breaking and alignment based on `maxWidth`, `lineHeight`, `horizontalAlign`, `verticalAlign`,
+ * and composes `Label`/`Sprite` child nodes reused through internal pools for performance.
+ *
+ * Key behaviors:
+ * - Parsing: Uses `HtmlTextParser` to convert the input into a structured segment array.
+ * - Layout: Calculates line widths/heights, wraps text respecting word boundaries and CJK rules, updates positions.
+ * - Caching: Reuses `Label`/`Sprite` nodes via pools; `cacheMode` applies only to system fonts.
+ * - Fonts: Supports system fonts and TTF via `font`/`useSystemFont` with editor-friendly toggling.
+ * - Images: `<img src="key">` resolves `SpriteFrame` from `imageAtlas`; invalid `src` is ignored.
+ * - Input: When `handleTouchEvent` is true, consumes touch within bounds and can trigger click handlers on segments.
  *
  * @zh
- * 富文本组件。
+ * RichText 组件。它会将 `string` 解析成片段，
+ * 应用样式（颜色、加粗、斜体、下划线、描边、字号、字体），并依据 `maxWidth`、`lineHeight`、
+ * `horizontalAlign`、`verticalAlign` 进行换行与对齐，通过内部对象池复用 `Label`/`Sprite` 子节点以提升性能。
+ *
+ * 主要行为：
+ * - 解析：使用 `HtmlTextParser` 将输入文本转换为结构化片段数组。
+ * - 排版：计算每行宽高，按词边界与 CJK(中日韩文字) 规则进行换行，更新片段位置。
+ * - 缓存：通过对象池复用 `Label`/`Sprite` 节点；`cacheMode` 仅支持系统字体。
+ * - 字体：支持系统字体与 TTF，结合 `font`/`useSystemFont` 进行切换，并兼容编辑器工作流。
+ * - 图片：`<img src="key">` 会从 `imageAtlas` 解析 `SpriteFrame`；无效 `src` 会被忽略。
+ * - 输入：当 `handleTouchEvent` 为真时，拦截边界内的触摸并可对片段触发点击回调。
+ *
+ * @example
+ * // English: Basic colored text with image
+ * richText.string = '<color=#ff0000>Hello</color> <img src="star"/> world';
+ * richText.maxWidth = 300;
+ * richText.horizontalAlign = RichText.HorizontalAlign.CENTER;
+ *
+ * // 中文：基础彩色文本并插入图片
+ * richText.string = '<color=#ff0000>你好</color> <img src="star"/> 世界';
+ * richText.maxWidth = 300;
+ * richText.horizontalAlign = RichText.HorizontalAlign.CENTER;
  */
 @ccclass('cc.RichText')
 @requireComponent(UITransform)
@@ -157,15 +190,28 @@ interface ISegment {
 export class RichText extends Component {
     /**
      * @en
-     * Content string of RichText.
+     * Content string of RichText. Supports color, size, font style, underline, outline and inline image via tags.
+     * Setting this property re-parses content and triggers layout update.
+     * @returns {string} Current rich text source string.
+     * @example
+     * // English
+     * richText.string = '<b>Bold</b> and <i>Italic</i> with <color=#00ff00>green</color>';
+     * // 中文
+     * richText.string = '<b>加粗</b>与<i>斜体</i>以及<color=#00ff00>绿色</color>';
      *
      * @zh
-     * 富文本显示的文本内容。
+     * 富文本源字符串，支持颜色、字号、字体样式、下划线、描边及内联图片标签。
+     * 设置该属性会重新解析文本并触发布局更新。
      */
     @multiline
     get string (): string {
         return this._string;
     }
+    /**
+     * @en Assign rich text content string. Triggers parse and full layout refresh.
+     * @param {string} value New rich text source string.
+     * @zh 设置富文本内容字符串。会重新解析并刷新完整排版。
+     */
     set string (value) {
         if (this._string === value) {
             return;
@@ -177,16 +223,22 @@ export class RichText extends Component {
 
     /**
      * @en
-     * Horizontal Alignment of each line in RichText.
-     *
+     * Horizontal alignment of each line. Impacts X offset when positioning segments.
+     * Changing this property marks layout dirty and recalculates positions.
+     * @returns {HorizontalTextAlignment} Current horizontal alignment.
      * @zh
-     * 文本内容的水平对齐方式。
+     * 每行的水平对齐方式。影响片段的 X 轴偏移。变更后会标记布局为脏并重新计算位置。
      */
     @type(HorizontalTextAlignment)
     get horizontalAlign (): HorizontalTextAlignment {
         return this._horizontalAlign;
     }
 
+    /**
+     * @en Set horizontal alignment and refresh layout.
+     * @param {HorizontalTextAlignment} value LEFT | CENTER | RIGHT
+     * @zh 设置水平对齐并刷新布局。
+     */
     set horizontalAlign (value) {
         if (this.horizontalAlign === value) {
             return;
@@ -199,16 +251,22 @@ export class RichText extends Component {
 
     /**
      * @en
-     * Vertical Alignment of each line in RichText.
-     *
+     * Vertical alignment applied when distributing lines within node height.
+     * Affects baseline offset of the first line.
+     * @returns {VerticalTextAlignment} Current vertical alignment.
      * @zh
-     * 文本内容的竖直对齐方式。
+     * 竖直对齐，用于在节点高度内分配各行位置。影响首行的基线偏移。
      */
     @type(VerticalTextAlignment)
     get verticalAlign (): VerticalTextAlignment {
         return this._verticalAlign;
     }
 
+    /**
+     * @en Set vertical alignment and mark layout dirty.
+     * @param {VerticalTextAlignment} value TOP | CENTER | BOTTOM
+     * @zh 设置竖直对齐并标记布局为脏。
+     */
     set verticalAlign (value) {
         if (this._verticalAlign === value) {
             return;
@@ -221,16 +279,22 @@ export class RichText extends Component {
 
     /**
      * @en
-     * Font size of RichText.
-     *
+     * Font size used for text segments without explicit size in tags.
+     * Changing this triggers a reflow and text measurement update.
+     * @returns {number} Current default font size in pixels.
      * @zh
-     * 富文本字体大小。
+     * 用于未在标签中显式指定字号的文本片段的默认字号。变更会触发重新排版与文本测量更新。
      */
     @editable
     get fontSize (): number {
         return this._fontSize;
     }
 
+    /**
+     * @en Set default font size and refresh layout.
+     * @param {number} value Font size in pixels.
+     * @zh 设置默认字号并刷新布局。
+     */
     set fontSize (value) {
         if (this._fontSize === value) {
             return;
@@ -243,15 +307,21 @@ export class RichText extends Component {
 
     /**
      * @en
-     * Font color of RichText. Works when the text content does not have a color parameter set. Transparency cascade is not supported.
-     *
+     * Default text color for segments without explicit color. Alpha cascade is not supported.
+     * Changing this updates label colors immediately.
+     * @returns {Color} Current default color.
      * @zh
-     * 富文本默认文字颜色。在文本内容没有设置颜色参数时生效。暂不支持颜色级联。
+     * 未显式指定颜色的文本片段的默认颜色。不支持颜色级联。
      */
     @type(Color)
     get fontColor (): Color {
         return this._fontColor;
     }
+    /**
+     * @en Set default font color and apply to existing label segments.
+     * @param {Color} value Color instance.
+     * @zh 设置默认文字颜色并应用到已有的标签片段。
+     */
     set fontColor (value: Color) {
         if (this._fontColor === value) {
             return;
@@ -263,15 +333,21 @@ export class RichText extends Component {
 
     /**
      * @en
-     * Custom System font of RichText.
-     *
+     * System font family name when using system fonts.
+     * Changing this marks layout dirty and refreshes measurement for system-font labels.
+     * @returns {string} Current system font family.
      * @zh
-     * 富文本定制系统字体。
+     * 使用系统字体时的字体族名称。变更会标记布局为脏并刷新系统字体标签的测量。
      */
     @editable
     get fontFamily (): string {
         return this._fontFamily;
     }
+    /**
+     * @en Set system font family and refresh layout.
+     * @param {string} value CSS-like font family name.
+     * @zh 设置系统字体族名称并刷新布局。
+     */
     set fontFamily (value: string) {
         if (this._fontFamily === value) return;
         this._fontFamily = value;
@@ -281,15 +357,20 @@ export class RichText extends Component {
 
     /**
      * @en
-     * Custom System font of RichText.
-     *
+     * TTF font asset. When set, system font is disabled and TTF metrics are used.
+     * @returns {TTFFont|null} Current TTF font asset or null.
      * @zh
-     * 富文本定制字体。
+     * TTF 字体资源。设置后会关闭系统字体并使用 TTF。
      */
     @type(Font)
     get font (): TTFFont | null {
         return this._font;
     }
+    /**
+     * @en Assign TTF font. Enables TTF mode and refreshes layout; assigning null switches to system font.
+     * @param {TTFFont|null} value TTF font asset or null.
+     * @zh 设置 TTF 字体。启用 TTF 模式并刷新布局；设为 null 将切换为系统字体。
+     */
     set font (value) {
         if (this._font === value) {
             return;
@@ -310,15 +391,21 @@ export class RichText extends Component {
 
     /**
      * @en
-     * Whether to use system font name or not.
-     *
+     * Whether to use system font rendering instead of a TTF asset.
+     * When enabled, `font` is ignored; when disabled and a user font exists, it will be restored in editor.
+     * @returns {boolean} True if system font is in use.
      * @zh
-     * 是否使用系统字体。
+     * 是否使用系统字体而非 TTF 资源。启用时忽略 `font`；禁用且存在用户字体时，在编辑器会恢复该字体。
      */
     @displayOrder(12)
     get useSystemFont (): boolean {
         return this._isSystemFontUsed;
     }
+    /**
+     * @en Toggle system font usage. Triggers layout refresh and asset switching.
+     * @param {boolean} value True to use system font.
+     * @zh 切换系统字体使用状态。触发布局刷新与资源切换。
+     */
     set useSystemFont (value: boolean) {
         if (this._isSystemFontUsed === value) {
             return;
@@ -340,15 +427,21 @@ export class RichText extends Component {
 
     /**
      * @en
-     * The cache mode of label. This mode only supports system fonts.
-     *
+     * Cache mode applied to system-font labels. Controls glyph caching for performance.
+     * Does not affect TTF rendering.
+     * @returns {CacheMode} Current cache mode.
      * @zh
-     * 文本缓存模式, 该模式只支持系统字体。
+     * 系统字体标签的缓存模式，用于控制字形缓存以提升性能。不影响 TTF 渲染。
      */
     @type(CacheMode)
     get cacheMode (): CacheMode {
         return this._cacheMode;
     }
+    /**
+     * @en Set cache mode for system fonts and refresh text.
+     * @param {CacheMode} value Cache mode enum.
+     * @zh 设置系统字体的缓存模式并刷新文本。
+     */
     set cacheMode (value: CacheMode) {
         if (this._cacheMode === value) {
             return;
@@ -359,16 +452,21 @@ export class RichText extends Component {
 
     /**
      * @en
-     * The maximize width of the RichText.
-     *
+     * Maximum text width. When greater than 0, text wraps to new lines to fit this width.
+     * @returns {number} Max content width in pixels; 0 means no wrapping.
      * @zh
-     * 富文本的最大宽度。
+     * 最大文本宽度。大于 0 时文本会按此宽度换行。返回值 0 表示不换行。
      */
     @editable
     get maxWidth (): number {
         return this._maxWidth;
     }
 
+    /**
+     * @en Set max text width and reflow content.
+     * @param {number} value Width in pixels; 0 to disable wrapping.
+     * @zh 设置最大文本宽度并重新排版；0 表示禁用换行限制。
+     */
     set maxWidth (value) {
         if (this._maxWidth === value) {
             return;
@@ -381,16 +479,21 @@ export class RichText extends Component {
 
     /**
      * @en
-     * Line Height of RichText.
-     *
+     * Line height used to place segments vertically. If not set in tags, this is the default spacing.
+     * @returns {number} Current line height in pixels.
      * @zh
-     * 富文本行高。
+     * 用于竖直放置片段的行高。若标签未指定，将作为默认行距。
      */
     @editable
     get lineHeight (): number {
         return this._lineHeight;
     }
 
+    /**
+     * @en Set line height and refresh layout.
+     * @param {number} value Line height in pixels.
+     * @zh 设置行高并刷新布局。
+     */
     set lineHeight (value) {
         if (this._lineHeight === value) {
             return;
@@ -403,16 +506,21 @@ export class RichText extends Component {
 
     /**
      * @en
-     * The image atlas for the img tag. For each src value in the img tag, there should be a valid spriteFrame in the image atlas.
-     *
+     * Atlas used to resolve `<img src="...">` sprite frames. Each `src` must exist in this atlas.
+     * @returns {SpriteAtlas|null} Current atlas; null means images are unavailable.
      * @zh
-     * 对于 img 标签里面的 src 属性名称，都需要在 imageAtlas 里面找到一个有效的 spriteFrame，否则 img tag 会判定为无效。
+     * 解析 `<img src="...">` 的图集。每个 `src` 必须在该图集中存在。
      */
     @type(SpriteAtlas)
     get imageAtlas (): SpriteAtlas | null {
         return this._imageAtlas;
     }
 
+    /**
+     * @en Assign atlas for image tags and refresh layout.
+     * @param {SpriteAtlas|null} value Atlas containing required `SpriteFrame`s.
+     * @zh 设置用于图片标签的图集并刷新布局。
+     */
     set imageAtlas (value) {
         if (this._imageAtlas === value) {
             return;
@@ -425,17 +533,22 @@ export class RichText extends Component {
 
     /**
      * @en
-     * Once checked, the RichText will block all input events (mouse and touch) within
-     * the bounding box of the node, preventing the input from penetrating into the underlying node.
-     *
+     * When enabled, RichText captures input events inside its bounds to prevent click-through.
+     * Toggles listener registration based on enabled state.
+     * @returns {boolean} True if touch events are handled.
      * @zh
-     * 选中此选项后，RichText 将阻止节点边界框中的所有输入事件（鼠标和触摸），从而防止输入事件穿透到底层节点。
+     * 启用后，RichText 会在其边界内捕获输入事件以防止穿透。会根据启用状态自动注册/注销监听。
      */
     @editable
     get handleTouchEvent (): boolean {
         return this._handleTouchEvent;
     }
 
+    /**
+     * @en Enable/disable touch handling. Registers/unregisters event listeners accordingly.
+     * @param {boolean} value True to handle touch.
+     * @zh 启用/禁用触摸事件处理。会按需注册或移除事件监听器。
+     */
     set handleTouchEvent (value) {
         if (this._handleTouchEvent === value) {
             return;
@@ -443,7 +556,7 @@ export class RichText extends Component {
 
         this._handleTouchEvent = value;
         if (this.enabledInHierarchy) {
-            if (this.handleTouchEvent) {
+            if (this._handleTouchEvent) {
                 this._addEventListeners();
             } else {
                 this._removeEventListeners();
@@ -451,15 +564,29 @@ export class RichText extends Component {
         }
     }
     /**
-     * @en Enum for horizontal text alignment.
-     *
-     * @zh 文本横向对齐类型。
+     * @en
+     * Enum alias for horizontal text alignment used by `RichText`.
+     * Values: `LEFT`, `CENTER`, `RIGHT`.
+     * @example
+     * // English
+     * richText.horizontalAlign = RichText.HorizontalAlign.CENTER;
+     * // 中文
+     * richText.horizontalAlign = RichText.HorizontalAlign.CENTER;
+     * @zh
+     * `RichText` 使用的横向对齐枚举别名，取值：`LEFT`、`CENTER`、`RIGHT`。
      */
     public static HorizontalAlign = HorizontalTextAlignment;
     /**
-     * @en Enum for vertical text alignment.
-     *
-     * @zh 文本垂直对齐类型。
+     * @en
+     * Enum alias for vertical text alignment used by `RichText`.
+     * Values: `TOP`, `CENTER`, `BOTTOM`.
+     * @example
+     * // English
+     * richText.verticalAlign = RichText.VerticalAlign.BOTTOM;
+     * // 中文
+     * richText.verticalAlign = RichText.VerticalAlign.BOTTOM;
+     * @zh
+     * `RichText` 使用的纵向对齐枚举别名，取值：`TOP`、`CENTER`、`BOTTOM`。
      */
     public static VerticalAlign = VerticalTextAlignment;
 
