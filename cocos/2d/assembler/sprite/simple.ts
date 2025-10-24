@@ -37,10 +37,35 @@ import type { StaticVBChunk } from '../../renderer/static-vb-accessor';
 const QUAD_INDICES = Uint16Array.from([0, 1, 2, 1, 3, 2]);
 
 /**
- * simple 组装器
- * 可通过 `UI.simple` 获取该组装器。
+ * @en
+ * Simple assembler, draws the basic shape of the texture, allowing uniform stretching of the graphic.
+ * The usage condition is to select Type as SIMPLE for the Sprite component .
+ * This assembler can be obtained via `Sprite.Assembler.getAssembler(sprite)`.
+ * 
+ * @zh
+ * simple 组装器，绘制纹理的基本形状，允许均匀拉伸图形
+ * 使用条件为 Sprite 组件选择 Type 为 SIMPLE
+ * 可通过 `Sprite.Assembler.getAssembler(sprite)` 获取该组装器。
  */
 class Simple implements IAssembler {
+    /**
+     * @en
+     * Creates render data for the sprite. 
+     * This method initializes the vertex buffer and index buffer
+     * for rendering a quad (rectangle) shape. The render data contains 4 vertices and 6 indices
+     * to form two triangles that make up the quad.
+     * 
+     * @zh
+     * 为精灵创建渲染数据。
+     * 此方法初始化用于渲染四边形（矩形）形状的顶点缓冲区和索引缓冲区。
+     * 渲染数据包含4个顶点和6个索引，用于构成组成四边形的两个三角形。
+     * 
+     * @param sprite - @en The sprite component to create render data for
+     *                @zh 要为其创建渲染数据的精灵组件
+     * 
+     * @returns @en The created render data object containing vertex and index buffers
+     *          @zh 创建的渲染数据对象，包含顶点和索引缓冲区
+     */
     createData (sprite: Sprite): RenderData {
         const renderData = sprite.requestRenderData();
         renderData.dataLength = 4;
@@ -49,6 +74,21 @@ class Simple implements IAssembler {
         return renderData;
     }
 
+    /**
+     * @en
+     * Updates the render data for the sprite. 
+     * This method handles the complete update process
+     * including packing to dynamic atlas, updating UV coordinates, and refreshing vertex data when necessary. 
+     * It's called automatically when the sprite's properties change.
+     * 
+     * @zh
+     * 更新精灵的渲染数据。
+     * 此方法处理完整的更新过程，包括打包到动态图集、更新UV坐标以及在必要时刷新顶点数据。
+     * 当精灵的属性发生变化时自动调用。
+     * 
+     * @param sprite - @en The sprite component to update render data for
+     *                @zh 要为其更新渲染数据的精灵组件
+     */
     updateRenderData (sprite: Sprite): void {
         const frame = sprite.spriteFrame;
 
@@ -95,6 +135,21 @@ class Simple implements IAssembler {
         }
     }
 
+    /**
+     * @en
+     * Fills the vertex and index buffers with sprite data for rendering. This method is called
+     * during the rendering process to populate the GPU buffers with the current sprite geometry.
+     * It handles both vertex transformation and index buffer population using an optimized approach.
+     * 
+     * @zh
+     * 使用精灵数据填充顶点和索引缓冲区以进行渲染。此方法在渲染过程中调用，
+     * 用于将当前精灵几何数据填充到GPU缓冲区。它使用优化的方法处理顶点变换和索引缓冲区填充。
+     * 
+     * @param sprite - @en The sprite component to fill buffers for
+     *                @zh 要为其填充缓冲区的精灵组件
+     * @param renderer - @en The batcher renderer that manages the rendering process
+     *                  @zh 管理渲染过程的批处理渲染器
+     */
     fillBuffers (sprite: Sprite, renderer: IBatcher): void {
         if (sprite === null) {
             return;
@@ -188,6 +243,20 @@ class Simple implements IAssembler {
         renderData.vertDirty = true;
     }
 
+    /**
+     * @en
+     * Updates the UV coordinates in the vertex buffer based on the sprite frame's texture coordinates.
+     * UV coordinates define how the texture is mapped onto the sprite geometry.
+     * This method is called automatically when the sprite frame changes.
+     * 
+     * @zh
+     * 根据精灵帧的纹理坐标更新顶点缓冲区中的UV坐标。
+     * UV坐标定义了纹理如何映射到精灵几何体上。
+     * 当精灵帧发生变化时自动调用此方法。
+     * 
+     * @param sprite - @en The sprite component to update UV coordinates for
+     *                @zh 要为其更新UV坐标的精灵组件
+     */
     updateUVs (sprite: Sprite): void {
         const renderData = sprite.renderData;
         if (!sprite.spriteFrame || !renderData) return;
@@ -203,6 +272,22 @@ class Simple implements IAssembler {
         }
     }
 
+    /**
+     * @en
+     * Updates the color values in the vertex buffer based on the sprite's color property.
+     * This method converts the sprite's RGBA color values (0-255 range) to normalized
+     * values (0.0-1.0 range) and stores them in the vertex buffer for all 4 vertices.
+     * This method is automatically called when the color property of the Sprite component is modified.
+     * 
+     * @zh
+     * 根据精灵的颜色属性更新顶点缓冲区中的颜色值。
+     * 此方法将精灵的RGBA颜色值（0-255范围）转换为归一化值（0.0-1.0范围）
+     * 并将其存储在顶点缓冲区中的所有4个顶点中。
+     * 修改 Sprite 组件的 color 属性时自动调用此方法。
+     * 
+     * @param sprite - @en The sprite component to update color values for
+     *                @zh 要为其更新颜色值的精灵组件
+     */
     updateColor (sprite: Sprite): void {
         const renderData = sprite.renderData;
         if (!renderData) return;

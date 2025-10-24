@@ -37,6 +37,11 @@ const FillType = Sprite.FillType;
 // Inline all type switch to avoid jit deoptimization during inlined function change
 
 const spriteAssembler: IAssemblerManager = {
+    /*
+    * @en Get the rendering assembler used by different types of Sprite components.
+    *
+    * @zh 获取不同类型 Sprite 组件使用的渲染组装器。
+    */
     getAssembler (spriteComp: UIRenderer) {
         let util: IAssembler = simple;
 
