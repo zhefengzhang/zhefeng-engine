@@ -77,10 +77,23 @@ enum EditBoxEventType {
 export class EditBox extends Component {
     /**
      * @en
-     * Input string of EditBox.
+     * The current text content of the EditBox.
+     * - Setter clamps input to `maxLength` when `maxLength >= 0`.
+     * - Setting the value triggers internal UI sync (`_updateString`) and toggles label visibility.
+     * - When empty, the placeholder label is shown; otherwise, the text label is shown.
+     * @returns Current input text.
+     * @example
+     * // Clamp to max length
+     * const edit = node.getComponent(EditBox)!;
+     * edit.maxLength = 5;
+     * edit.string = '123456'; // becomes '12345'
      *
      * @zh
-     * 输入框的初始输入内容，如果为空则会显示占位符的文本。
+     * EditBox 的当前输入文本。
+     * - 在 `maxLength >= 0` 时，setter 会将输入裁剪到 `maxLength`。
+     * - 赋值会触发内部 UI 同步（`_updateString`）并控制文本/占位符的显隐。
+     * - 当文本为空时显示占位符标签，否则显示文本标签。
+     * @returns 当前输入文本。
      */
     @displayOrder(1)
     @tooltip('i18n:editbox.string')
@@ -103,10 +116,19 @@ export class EditBox extends Component {
 
     /**
      * @en
-     * The display text of placeholder.
+     * The placeholder text shown when `string` is empty.
+     * - Returns the current placeholder label text; returns an empty string if label is not created.
+     * - Setting the value updates the placeholder Label's `string` if present.
+     * @returns Current placeholder text.
+     * @example
+     * const edit = node.getComponent(EditBox)!;
+     * edit.placeholder = 'Enter your name';
      *
      * @zh
      * 输入框占位符的文本内容。
+     * - getter 返回当前占位符 Label 的文本；如果尚未创建则返回空字符串。
+     * - setter 赋值会更新占位符 Label 的 `string`（若存在）。
+     * @returns 当前占位符文本。
      */
     @displayOrder(2)
     @tooltip('i18n:editbox.placeholder')
@@ -125,10 +147,19 @@ export class EditBox extends Component {
 
     /**
      * @en
-     * The Label component attached to the node for EditBox's input text label.
+     * The `Label` used to render the current input text.
+     * - When assigned, internal label node is (re)configured and UI state is refreshed.
+     * - Text wrapping is controlled by `inputMode` (`ANY` enables multiline with wrapping).
+     * @returns The Label instance or `null` when not yet created.
+     * @example
+     * const edit = node.getComponent(EditBox)!;
+     * edit.textLabel!.color = new Color(255, 255, 255);
      *
      * @zh
-     * 输入框输入文本节点上挂载的 Label 组件对象。
+     * 渲染当前输入文本的 `Label` 组件。
+     * - 赋值会使内部文本节点被（重新）配置，并刷新 UI 状态。
+     * - 文本换行由 `inputMode` 控制（`ANY` 为多行并启用换行）。
+     * @returns 该 Label 实例，未创建则为 `null`。
      */
     @type(Label)
     @displayOrder(3)
@@ -149,10 +180,19 @@ export class EditBox extends Component {
 
     /**
      * @en
-     * The Label component attached to the node for EditBox's placeholder text label.
+     * The `Label` used to render the placeholder text.
+     * - Recreated/configured when assigned; UI state is refreshed accordingly.
+     * - Text wrapping is controlled by `inputMode` (`ANY` enables multiline wrapping).
+     * @returns The placeholder `Label` instance or `null` when not yet created.
+     * @example
+     * const edit = node.getComponent(EditBox)!;
+     * edit.placeholderLabel!.color = new Color(120, 120, 120); // dim style
      *
      * @zh
-     * 输入框占位符节点上挂载的 Label 组件对象。
+     * 渲染占位符文本的 `Label` 组件。
+     * - 赋值会（重新）创建/配置该节点，并刷新相关 UI 状态。
+     * - 文本换行由 `inputMode` 控制（`ANY` 为多行并启用换行）。
+     * @returns 占位符 `Label` 实例，未创建则为 `null`。
      */
     @type(Label)
     @displayOrder(4)
@@ -173,10 +213,19 @@ export class EditBox extends Component {
 
     /**
      * @en
-     * The background image of EditBox.
+     * The background `SpriteFrame` used by the EditBox.
+     * - Setting the value ensures a `Sprite` is present on the node and updates its `spriteFrame`.
+     * - Background `Sprite` is configured as `SLICED` and sized to match the `UITransform`.
+     * @returns Current background `SpriteFrame` or `null`.
+     * @example
+     * const edit = node.getComponent(EditBox)!;
+     * edit.backgroundImage = sf;
      *
      * @zh
      * 输入框的背景图片。
+     * - 赋值会确保节点上存在 `Sprite` 并更新其 `spriteFrame`。
+     * - 背景 `Sprite` 配置为 `SLICED` 并自动匹配 `UITransform` 尺寸。
+     * @returns 当前背景 `SpriteFrame` 或 `null`。
      */
     @type(SpriteFrame)
     @displayOrder(5)
@@ -197,10 +246,18 @@ export class EditBox extends Component {
 
     /**
      * @en
-     * Set the input flags that are to be applied to the EditBox.
+     * Input display/formatting flags for the EditBox.
+     * - Updating flags triggers `string` restyle (`_updateString`) to apply changes.
+     * - Includes password mode, capitalization, etc.
+     * @returns The current `InputFlag`.
+     * @example
+     * edit.inputFlag = InputFlag.PASSWORD;
      *
      * @zh
      * 指定输入标志位，可以指定输入方式为密码或者单词首字母大写。
+     * - 更新该标志会触发 `string` 的重新样式化（`_updateString`）。
+     * - 包含密码模式、单词首字母大写等。
+     * @returns 当前 `InputFlag`。
      */
     @type(InputFlag)
     @displayOrder(6)
@@ -220,11 +277,18 @@ export class EditBox extends Component {
 
     /**
      * @en
-     * Set the input mode of the edit box.
-     * If you pass ANY, it will create a multiline EditBox.
+     * Input mode for the EditBox.
+     * - `ANY` enables multiline input; others are single-line.
+     * - Setter reconfigures `textLabel` and `placeholderLabel` wrapping/alignment.
+     * @returns Current `InputMode`.
+     * @example
+     * edit.inputMode = InputMode.ANY; // multiline
      *
      * @zh
-     * 指定输入模式: ANY表示多行输入，其它都是单行输入，移动平台上还可以指定键盘样式。
+     * EditBox 的输入模式。
+     * - `ANY` 为多行输入，其它为单行输入。
+     * - setter 会重新配置 `textLabel` 与 `placeholderLabel` 的换行/对齐。
+     * @returns 当前 `InputMode`。
      */
     @type(InputMode)
     @displayOrder(7)
@@ -243,12 +307,16 @@ export class EditBox extends Component {
 
     /**
      * @en
-     * The return key type of EditBox.
-     * Note: it is meaningless for web platforms and desktop platforms.
+     * The return key type on virtual keyboards (mobile only).
+     * - No effect on Web/Desktop platforms.
+     * @returns Current `KeyboardReturnType`.
+     * @example
+     * edit.returnType = KeyboardReturnType.SEARCH;
      *
      * @zh
-     * 指定移动设备上面回车按钮的样式。
-     * 注意：这个选项对 web 平台与 desktop 平台无效。
+     * 移动设备虚拟键盘的回车键样式。
+     * - 对 Web/Desktop 平台无效。
+     * @returns 当前 `KeyboardReturnType`。
      */
     @type(KeyboardReturnType)
     @displayOrder(8)
@@ -263,14 +331,20 @@ export class EditBox extends Component {
 
     /**
      * @en
-     * The maximize input length of EditBox.
-     * - If pass a value less than 0, it won't limit the input number of characters.
-     * - If pass 0, it doesn't allow input any characters.
+     * Maximum number of characters permitted.
+     * - `< 0`: no limit.
+     * - `0`: disallow any input.
+     * - `> 0`: clamp `string` on set.
+     * @returns Current max length.
+     * @example
+     * edit.maxLength = 5; edit.string = 'abcdef'; // 'abcde'
      *
      * @zh
-     * 输入框最大允许输入的字符个数。
-     * - 如果值为小于 0 的值，则不会限制输入字符个数。
-     * - 如果值为 0，则不允许用户进行任何输入。
+     * 允许输入的最大字符数。
+     * - `< 0`：不限制输入。
+     * - `0`：禁止任何输入。
+     * - `> 0`：为 `string` 赋值时进行裁剪。
+     * @returns 当前最大长度。
      */
     @displayOrder(9)
     @tooltip('i18n:editbox.max_length')
@@ -283,10 +357,18 @@ export class EditBox extends Component {
 
     /**
      * @en
-     * Set the tabIndex of the DOM input element (only useful on Web).
+     * DOM `tabIndex` for keyboard navigation (Web only).
+     * - Applies only when a native DOM input is created by the platform layer.
+     * - Setting updates underlying implementation via `_impl.setTabIndex`.
+     * @returns Current tab index.
+     * @example
+     * edit.tabIndex = 10; // focus order in DOM
      *
      * @zh
-     * 修改 DOM 输入元素的 tabIndex（这个属性只有在 Web 上面修改有意义）。
+     * DOM 键盘导航使用的 `tabIndex`（仅 Web 有效）。
+     * - 仅在平台层创建原生 DOM 输入元素时生效。
+     * - 赋值会通过 `_impl.setTabIndex` 更新底层实现。
+     * @returns 当前 tab 索引。
      */
     @displayOrder(10)
     @tooltip('i18n:editbox.tab_index')
@@ -308,31 +390,65 @@ export class EditBox extends Component {
      */
     public static _EditBoxImpl = EditBoxImplBase;
     /**
-     * @en Keyboard Return Type.
-     * @zh 键盘的返回键类型。
+     * @en
+     * Keyboard Return Type enum alias for convenient access: `EditBox.KeyboardReturnType`.
+     * @zh
+     * 键盘返回键类型的枚举别名，便于通过 `EditBox.KeyboardReturnType` 访问。
+     * @example
+     * edit.returnType = EditBox.KeyboardReturnType.SEARCH;
      */
     public static KeyboardReturnType = KeyboardReturnType;
     /**
-     * @en Defines some flag bits for setting text display and text formatting.
-     * @zh 定义了一些用于设置文本显示和文本格式化的标志位。
+     * @en
+     * InputFlag enum alias for convenient access: `EditBox.InputFlag`.
+     * Includes password masking, capitalization rules, etc.
+     * @zh
+     * 输入标志位枚举的别名，可通过 `EditBox.InputFlag` 访问，包含密码掩码、大小写规则等。
+     * @example
+     * edit.inputFlag = EditBox.InputFlag.PASSWORD;
      */
     public static InputFlag = InputFlag;
     /**
-     * @en Input Mode.
-     * @zh 输入模式。
+     * @en
+     * InputMode enum alias for convenient access: `EditBox.InputMode`.
+     * Controls single-line vs. multiline behavior and label wrapping.
+     * @zh
+     * 输入模式枚举的别名，通过 `EditBox.InputMode` 访问，用于控制单行/多行行为与标签换行。
+     * @example
+     * edit.inputMode = EditBox.InputMode.ANY;
      */
     public static InputMode = InputMode;
     /**
-     * @en Keyboard event enumeration.
-     * @zh 键盘的事件枚举。
+     * @en
+     * EditBox event type alias for `node.emit` and `ComponentEventHandler` mapping.
+     * Includes:
+     * - `editing-did-began`
+     * - `text-changed`
+     * - `editing-did-ended`
+     * - `editing-return`
+     * @zh
+     * EditBox 的事件类型别名，用于 `node.emit` 与 `ComponentEventHandler` 的事件映射。
+     * 包含：
+     * - `editing-did-began`
+     * - `text-changed`
+     * - `editing-did-ended`
+     * - `editing-return`
+     * @example
+     * node.emit(EditBox.EventType.TEXT_CHANGED, editBox);
      */
     public static EventType = EditBoxEventType;
     /**
      * @en
-     * The event handler to be called when EditBox began to edit text.
+     * Event handlers invoked when editing begins.
+     * - Triggered via `ComponentEventHandler.emitEvents(editingDidBegan, this)` and `node.emit(EDITING_DID_BEGAN, this)`.
+     * - Registered handlers receive the `EditBox` instance.
+     * @example
+     * // Inspector: add handlers to `editingDidBegan`
      *
      * @zh
-     * 开始编辑文本输入框触发的事件回调。
+     * 开始编辑时触发的事件回调数组。
+     * - 通过 `ComponentEventHandler.emitEvents(editingDidBegan, this)` 与 `node.emit(EDITING_DID_BEGAN, this)` 触发。
+     * - 监听函数接收 `EditBox` 实例作为参数。
      */
     @type([ComponentEventHandler])
     @serializable
@@ -342,10 +458,16 @@ export class EditBox extends Component {
 
     /**
      * @en
-     * The event handler to be called when EditBox text changes.
+     * Event handlers invoked when text changes during editing.
+     * - Triggered via `emitEvents(textChanged, text, this)` and `node.emit(TEXT_CHANGED, this)`.
+     * - Handlers receive new text and `EditBox` instance.
+     * @example
+     * edit.textChanged.push(new ComponentEventHandler());
      *
      * @zh
-     * 编辑文本输入框时触发的事件回调。
+     * 编辑时文本变化触发的事件回调数组。
+     * - 通过 `emitEvents(textChanged, text, this)` 与 `node.emit(TEXT_CHANGED, this)` 触发。
+     * - 监听函数接收新文本与 `EditBox` 实例。
      */
     @type([ComponentEventHandler])
     @serializable
@@ -355,10 +477,16 @@ export class EditBox extends Component {
 
     /**
      * @en
-     * The event handler to be called when EditBox edit ends.
+     * Event handlers invoked when editing ends.
+     * - Triggered via `emitEvents(editingDidEnded, this)` and `node.emit(EDITING_DID_ENDED, this, text?)`.
+     * - Some platforms may provide sanitized text payload via the event.
+     * @example
+     * edit.editingDidEnded.push(new ComponentEventHandler());
      *
      * @zh
-     * 结束编辑文本输入框时触发的事件回调。
+     * 结束编辑时触发的事件回调数组。
+     * - 通过 `emitEvents(editingDidEnded, this)` 与 `node.emit(EDITING_DID_ENDED, this, text?)` 触发。
+     * - 某些平台可能会通过该事件提供脱敏后的文本负载。
      */
     @type([ComponentEventHandler])
     @serializable
@@ -368,10 +496,16 @@ export class EditBox extends Component {
 
     /**
      * @en
-     * The event handler to be called when return key is pressed. Windows is not supported.
+     * Event handlers invoked when the return/enter key is pressed.
+     * - Not supported on Windows.
+     * - Some platforms may provide sanitized text payload.
+     * @example
+     * edit.editingReturn.push(new ComponentEventHandler());
      *
      * @zh
-     * 当用户按下回车按键时的事件回调，目前不支持 windows 平台。
+     * 当用户按下回车键时触发的事件回调数组。
+     * - Windows 平台不支持。
+     * - 某些平台可能会提供脱敏文本负载。
      */
     @type([ComponentEventHandler])
     @serializable
@@ -451,8 +585,17 @@ export class EditBox extends Component {
     }
 
     /**
-     * @en Let the EditBox get focus.
-     * @zh 让当前 EditBox 获得焦点。
+     * @en
+     * Set focus to the EditBox.
+     * - On platforms with a native input (Web/mobile), may trigger OS keyboard.
+     * - Internally delegates to implementation via `_impl.setFocus(true)`.
+     *
+     * @zh
+     * 让 EditBox 获得焦点。
+     * - 在具备原生输入的环境（Web/移动端）可能会唤起系统键盘。
+     * - 内部通过 `_impl.setFocus(true)` 委托到具体平台实现。
+     * @example
+     * edit.setFocus();
      */
     public setFocus (): void {
         if (this._impl) {
@@ -461,8 +604,13 @@ export class EditBox extends Component {
     }
 
     /**
-     * @en Let the EditBox get focus.
-     * @zh 让当前 EditBox 获得焦点。
+     * @en
+     * Alias of `setFocus()`. Sets focus to the EditBox.
+     *
+     * @zh
+     * `setFocus()` 的别名。让 EditBox 获得焦点。
+     * @example
+     * edit.focus();
      */
     public focus (): void {
         if (this._impl) {
@@ -471,8 +619,17 @@ export class EditBox extends Component {
     }
 
     /**
-     * @en Let the EditBox lose focus.
-     * @zh 让当前 EditBox 失去焦点。
+     * @en
+     * Remove focus from the EditBox.
+     * - On platforms with a native input, hides OS keyboard.
+     * - Internally delegates to implementation via `_impl.setFocus(false)`.
+     *
+     * @zh
+     * 让 EditBox 失去焦点。
+     * - 在具备原生输入的环境会收起系统键盘。
+     * - 内部通过 `_impl.setFocus(false)` 委托到具体平台实现。
+     * @example
+     * edit.blur();
      */
     public blur (): void {
         if (this._impl) {
@@ -481,9 +638,17 @@ export class EditBox extends Component {
     }
 
     /**
-     * @en Determine whether EditBox is getting focus or not.
-     * @zh 判断 EditBox 是否获得了焦点。
-     * Note: only available on Web at the moment.
+     * @en
+     * Returns whether the EditBox currently has focus.
+     * - Effective on platforms with native input (Web at present).
+     * @returns `true` if focused, otherwise `false`.
+     *
+     * @zh
+     * 返回 EditBox 当前是否处于焦点状态。
+     * - 在具有原生输入的平台有效（目前为 Web）。
+     * @returns 若已获得焦点返回 `true`，否则返回 `false`。
+     * @example
+     * if (edit.isFocused()) { // handle logic  }
      */
     public isFocused (): boolean {
         if (this._impl) {
@@ -502,7 +667,7 @@ export class EditBox extends Component {
 
     /**
      * @deprecated since v3.5.0, this is an engine private interface that will be removed in the future.
-     * @param text content filtered by sensitive words.This parameter may be undefined.
+     * @param text content filtered by sensitive words.This parameter may be undefined.
      * If relevant platform returns desensitized content, it will be passed to developer by EventType.EDITING_DID_ENDED.
      * Now only ByteDance minigame platform
      */
