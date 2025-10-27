@@ -41,6 +41,7 @@ import { Layout } from './layout';
 import { ScrollBar } from './scroll-bar';
 import { ViewGroup } from './view-group';
 import { InputEventType } from '../input/types/event-enum';
+import { Prefab } from '../scene-graph';
 
 const NUMBER_OF_GATHERED_TOUCHES_FOR_MOVE_SPEED = 5;
 const OUT_OF_BOUNDARY_BREAKING_FACTOR = 0.05;
@@ -67,7 +68,7 @@ const eventMap = {
     'scroll-to-bottom': 1,
     'scroll-to-left': 2,
     'scroll-to-right': 3,
-    scrolling: 4,
+    'scrolling': 4,
     'bounce-bottom': 6,
     'bounce-left': 7,
     'bounce-right': 8,
@@ -259,7 +260,7 @@ export class ScrollView extends ViewGroup {
      */
     @serializable
     @range([0, 1, 0.1])
-    @displayOrder(3)
+    @displayOrder(4)
     @tooltip('i18n:scrollview.brake')
     public brake = 0.5;
 
@@ -271,7 +272,7 @@ export class ScrollView extends ViewGroup {
      * 是否允许滚动内容超过边界，并在停止触摸后回弹。
      */
     @serializable
-    @displayOrder(3)
+    @displayOrder(4)
     @tooltip('i18n:scrollview.elastic')
     public elastic = true;
 
@@ -283,7 +284,7 @@ export class ScrollView extends ViewGroup {
      * 是否开启滚动惯性。
      */
     @serializable
-    @displayOrder(2)
+    @displayOrder(3)
     @tooltip('i18n:scrollview.inertia')
     public inertia = true;
 
@@ -316,24 +317,121 @@ export class ScrollView extends ViewGroup {
 
     /**
      * @en
+     * Enable virtual list.
+     *
+     * @zh
+     * 是否开启虚拟列表。
+     */
+    @serializable
+    @displayOrder(0)
+    @tooltip('i18n:scrollview.virtual_list')
+    public virtualList = false;
+
+    /**
+     * @en
+     * Virtual list item template.
+     *
+     * @zh
+     * 虚拟列表条目模板。
+     */
+    @serializable
+    @displayOrder(0)
+    @tooltip('i18n:scrollview.item_template')
+    public itemTemplate : Node | Prefab | null = null;
+
+    /**
+     * @en
+     * Top margin inside the container, which takes effect when vertical scrolling is enabled.
+     *
+     * @zh
+     * 容器内上边距，当开启垂直滚动时生效。
+     */
+    @serializable
+    @displayOrder(0)
+    @tooltip('i18n:scrollview.padding_top')
+    public paddingTop : number = 0;
+
+    /**
+     * @en
+     * Bottom margin inside the container, which takes effect when vertical scrolling is enabled.
+     *
+     * @zh
+     * 容器内下边距，当开启垂直滚动时生效。
+     */
+    @serializable
+    @displayOrder(0)
+    @tooltip('i18n:scrollview.padding_bottom')
+    public paddingBottom : number = 0;
+
+    /**
+     * @en
+     * Left margin inside the container, which takes effect when horizontal scrolling is enabled.
+     *
+     * @zh
+     * 容器内左边距，当开启水平滚动时生效。
+     */
+    @serializable
+    @displayOrder(0)
+    @tooltip('i18n:scrollview.padding_left')
+    public paddingLeft : number = 0;
+
+    /**
+     * @en
+     * Right margin inside the container, which takes effect when horizontal scrolling is enabled.
+     *
+     * @zh
+     * 容器内右边距，当开启水平滚动时生效。
+     */
+    @serializable
+    @displayOrder(0)
+    @tooltip('i18n:scrollview.padding_right')
+    public paddingRight : number = 0;
+
+    /**
+     * @en
+     * Horizontal spacing between nodes of list items, which takes effect when horizontal scrolling is enabled.
+     *
+     * @zh
+     * 列表条目的节点水平间距，当开启水平滚动时生效。
+     */
+    @serializable
+    @displayOrder(0)
+    @tooltip('i18n:scrollview.spacing_x')
+    public spacingX : number = 0;
+
+    /**
+     * @en
+     * Vertical spacing between nodes of list items, which takes effect when vertical scrolling is enabled.
+     *
+     * @zh
+     * 列表条目的节点垂直间距，当开启垂直滚动时生效。
+     */
+    @serializable
+    @displayOrder(0)
+    @tooltip('i18n:scrollview.spacing_y')
+    public spacingY : number = 0;
+
+    /**
+     * @en
      * Enable horizontal scroll.
      *
      * @zh
      * 是否开启水平滚动。
      */
     @serializable
-    @displayOrder(0)
+    @displayOrder(1)
     @tooltip('i18n:scrollview.horizontal')
     public horizontal = true;
 
     /**
      * @en
      * The horizontal scrollbar reference.
+     *
      * @zh
      * 水平滚动的 ScrollBar。
      */
     @type(ScrollBar)
-    @displayOrder(0)
+    @displayOrder(1)
     @tooltip('i18n:scrollview.horizontal_bar')
     get horizontalScrollBar (): ScrollBar | null {
         const horizontalScrollBar = this._horizontalScrollBar;
@@ -364,7 +462,7 @@ export class ScrollView extends ViewGroup {
      * 是否开启垂直滚动。
      */
     @serializable
-    @displayOrder(1)
+    @displayOrder(2)
     @tooltip('i18n:scrollview.vertical')
     public vertical = true;
 
@@ -376,7 +474,7 @@ export class ScrollView extends ViewGroup {
      * 垂直滚动的 ScrollBar。
      */
     @type(ScrollBar)
-    @displayOrder(1)
+    @displayOrder(2)
     @tooltip('i18n:scrollview.vertical_bar')
     get verticalScrollBar (): ScrollBar | null {
         const verticalScrollBar = this._verticalScrollBar;
@@ -451,6 +549,9 @@ export class ScrollView extends ViewGroup {
     protected _bottomBoundary = 0;
     protected _leftBoundary = 0;
     protected _rightBoundary = 0;
+
+    protected _itemWidth = 0;
+    protected _itemHeight = 0;
 
     protected _touchMoveDisplacements: Vec3[] = [];
     protected _touchMoveTimeDeltas: number[] = [];
@@ -1020,12 +1121,13 @@ export class ScrollView extends ViewGroup {
 
         const wheelPrecision = -0.1;
         const scrollY = event.getScrollY();
+        const displacement = Math.abs(scrollY) > 0 ? scrollY : event.getScrollX();
 
         const deltaMove = _tempVec3;
         if (self.vertical) {
-            deltaMove.set(0, scrollY * wheelPrecision, 0);
+            deltaMove.set(0, displacement * wheelPrecision, 0);
         } else if (self.horizontal) {
-            deltaMove.set(scrollY * wheelPrecision, 0, 0);
+            deltaMove.set(displacement * wheelPrecision, 0, 0);
         }
 
         self._mouseWheelEventElapsedTime = 0;
@@ -1133,27 +1235,110 @@ export class ScrollView extends ViewGroup {
         self._stopPropagationIfTargetIsMe(event);
     }
 
+    public initVirtualList () {
+        if (!this.virtualList || !this._content) return;
+        var itemNode : Node | null = null;
+        if (this.itemTemplate instanceof Prefab) {
+            itemNode = this.itemTemplate.data as Node;
+        } else if (this.itemTemplate instanceof Node) {
+            itemNode = this.itemTemplate;
+        } else if (this._content.children[0]) {
+            itemNode = this._content.children[0];
+        }
+        if (itemNode) {
+            const uiTrans = itemNode.getComponent(UITransform);
+            if (uiTrans) {
+                this._itemWidth = uiTrans.width;
+                this._itemHeight = uiTrans.height;
+            }
+        }
+        
+        const layout = this._content.getComponent(Layout);
+        if (layout) {
+            // 因为 layout 组件在频繁增删子节点的场景下使用会频繁注册和反注册节点事件，当子节点的层级变化时就会对所有子节点的坐标进行修改。
+            // 而虚拟列表的场景只需要修改节点的 y 坐标移动 item 即可，所以运行时关闭 Layout 组件，在 ScrollView 组件中运行时自动布局是最高效的方案
+            if (layout.enabledInHierarchy) layout.enabled = false;
+            this.paddingTop = layout.paddingTop;
+            this.paddingBottom = layout.paddingBottom;
+            this.paddingLeft = layout.paddingLeft;
+            this.paddingRight = layout.paddingRight;
+            this.spacingX = layout.spacingX;
+            this.spacingY = layout.spacingY;
+        }
+        const viewUITrans = this.node.getComponent(UITransform);
+        var itemCount, contentWidth, contentHeight = 0;
+        var contentUITrans = this._content.getComponent(UITransform);
+        if (viewUITrans) {
+            if (this.horizontal && !this.vertical) {
+                var viewWidth = viewUITrans.width - this.paddingLeft - this.paddingRight;
+                itemCount = Math.round(viewWidth / this._itemWidth);
+                contentWidth = this.paddingLeft + itemCount * this._itemWidth + (itemCount - 1) * this.spacingX + this.paddingRight;
+                contentHeight = this.paddingTop + this._itemHeight + this.paddingBottom;
+            }
+            if (this.vertical && !this.horizontal) {
+                var viewHeight = viewUITrans.height - this.paddingTop - this.paddingBottom;
+                itemCount = Math.round(viewHeight / this._itemHeight);
+                contentHeight = this.paddingTop + itemCount * this._itemHeight + (itemCount - 1) * this.spacingY + this.paddingBottom;
+                contentWidth = this.paddingLeft + this._itemWidth + this.paddingRight;
+            }
+            if (contentUITrans) {
+                contentUITrans.setContentSize(contentWidth, contentHeight);
+            }
+        }
+    }
+
+    /**
+     * @en
+     * Calculate and update the boundary values for the scroll view.
+     * This method determines the visible area boundaries based on the view's size and anchor point,
+     * and ensures the content is properly positioned within these boundaries.
+     * 
+     * The boundaries are calculated as follows:
+     * - Left boundary: negative of view's width multiplied by anchorX
+     * - Bottom boundary: negative of view's height multiplied by anchorY  
+     * - Right boundary: left boundary plus view's width
+     * - Top boundary: bottom boundary plus view's height
+     * 
+     * After calculating boundaries, it moves the content to the top-left position
+     * to ensure proper initial positioning.
+     * 
+     * @zh
+     * 计算并更新滚动视图的边界值。
+     * 此方法根据视图的大小和锚点确定可见区域的边界，
+     * 并确保内容在这些边界内正确放置。
+     * 
+     * 边界计算方式如下：
+     * - 左边界：视图宽度乘以锚点X的负值
+     * - 下边界：视图高度乘以锚点Y的负值
+     * - 右边界：左边界加上视图宽度
+     * - 上边界：下边界加上视图高度
+     * 
+     * 计算完边界后，将内容移动到左上角位置以确保正确的初始定位。
+     */
     protected _calculateBoundary (): void {
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const self = this;
 
         if (self._content && self.view) {
-            // refresh content size
+            // refresh content size - update layout if content has a Layout component
             const layout = self._content.getComponent(Layout);
             if (layout && layout.enabledInHierarchy) {
                 layout.updateLayout();
             }
             const viewTrans = self.view;
 
+            // Calculate anchor positions based on view's size and anchor point
             const anchorX = viewTrans.width * viewTrans.anchorX;
             const anchorY = viewTrans.height * viewTrans.anchorY;
 
+            // Set the four boundary values that define the visible area
             self._leftBoundary = -anchorX;
             self._bottomBoundary = -anchorY;
 
             self._rightBoundary = self._leftBoundary + viewTrans.width;
             self._topBoundary = self._bottomBoundary + viewTrans.height;
 
+            // Position the content appropriately within the calculated boundaries
             self._moveContentToTopLeft(viewTrans.contentSize);
         }
     }
@@ -1428,7 +1613,7 @@ export class ScrollView extends ViewGroup {
             }
         }
 
-        ComponentEventHandler.emitEvents(this.scrollEvents, this, eventMap[event]);
+        ComponentEventHandler.emitEvents(this.scrollEvents, this, event);
         this.node.emit(event, this);
     }
 
