@@ -405,7 +405,7 @@ export const widgetManager = cclegacy._widgetManager = {
      *     将节点遍历顺序标记为脏，下一次场景扫描时重建 `activeWidgets` 列表。
      * @returns {void}
      */
-    add (): void {
+    add (widget: Widget): void {
         this._nodesOrderDirty = true;
     },
     /**
