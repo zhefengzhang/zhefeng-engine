@@ -1,3 +1,5 @@
+/* eslint-disable func-names */
+/* eslint-disable max-len */
 /*
  Copyright (c) 2013-2016 Chukong Technologies Inc.
  Copyright (c) 2017-2023 Xiamen Yaji Software Co., Ltd.
@@ -284,10 +286,19 @@ export class Layout extends Component {
     }
     /**
      * @en
-     * The are three resize modes for Layout. None, resize Container and resize children.
+     * Resize mode: `NONE` (no auto-resize), `CONTAINER` (resize container to fit children),
+     * `CHILDREN` (resize children to fit container).
+     * Notes:
+     * - In `CHILDREN` with `GRID`, child height/width uses `cellSize`.
+     * - In `CONTAINER`, container width/height is computed from children + padding + spacing.
+     * Side effects: marks layout dirty.
      *
      * @zh
-     * 缩放模式。
+     * 缩放模式：`NONE`（不自动缩放）、`CONTAINER`（容器随子节点变化）、`CHILDREN`（子节点随容器变化）。
+     * 说明：
+     * - 在 `CHILDREN` 且 `GRID` 时，子节点尺寸取自 `cellSize`。
+     * - 在 `CONTAINER` 时，容器尺寸由子节点尺寸 + 内边距 + 间距计算得到。
+     * 副作用：标记布局为脏。
      */
     @type(LayoutResizeMode)
     @visible(function (this: Layout): boolean {
@@ -297,11 +308,20 @@ export class Layout extends Component {
     get resizeMode (): LayoutResizeMode {
         return this._resizeMode;
     }
+
+    /**
+     * @en
+     * Set resize mode. Ignored if `type` is `NONE`.
+     * Side effects: marks layout dirty.
+     *
+     * @zh
+     * 设置缩放模式。当 `type` 为 `NONE` 时忽略。
+     * 副作用：标记布局为脏。
+     */
     set resizeMode (value) {
         if (this._layoutType === LayoutType.NONE) {
             return;
         }
-
         this._resizeMode = value;
         this._doLayoutDirty();
     }
@@ -358,10 +378,10 @@ export class Layout extends Component {
     }
     /**
      * @en
-     * The left padding of layout, it only effect the layout in one direction.
+     * The left padding of layout, it only effect the layout when horizontalDirection is LEFT_TO_RIGHT.
      *
      * @zh
-     * 容器内左边距，只会在一个布局方向上生效。
+     * 容器内左边距，只会在horizontalDirection为LEFT_TO_RIGHT时生效。
      */
     @tooltip('i18n:layout.padding_left')
     get paddingLeft (): number {
@@ -371,17 +391,16 @@ export class Layout extends Component {
         if (this._paddingLeft === value) {
             return;
         }
-
         this._paddingLeft = value;
         this._doLayoutDirty();
     }
 
     /**
      * @en
-     * The right padding of layout, it only effect the layout in one direction.
+     * The right padding of layout, it only effect the layout when horizontalDirection is RIGHT_TO_LEFT.
      *
      * @zh
-     * 容器内右边距，只会在一个布局方向上生效。
+     * 容器内右边距，只会在horizontalDirection为RIGHT_TO_LEFT时生效。
      */
     @tooltip('i18n:layout.padding_right')
     get paddingRight (): number {
@@ -391,7 +410,6 @@ export class Layout extends Component {
         if (this._paddingRight === value) {
             return;
         }
-
         this._paddingRight = value;
         this._doLayoutDirty();
     }
@@ -411,7 +429,6 @@ export class Layout extends Component {
         if (this._paddingTop === value) {
             return;
         }
-
         this._paddingTop = value;
         this._doLayoutDirty();
     }
@@ -431,17 +448,18 @@ export class Layout extends Component {
         if (this._paddingBottom === value) {
             return;
         }
-
         this._paddingBottom = value;
         this._doLayoutDirty();
     }
 
     /**
-     * @en
-     * The distance in x-axis between each element in layout.
+     * @en Horizontal spacing between adjacent children.
+     * Affects container width in `CONTAINER` mode and child width in `CHILDREN` mode.
+     * Side effects: marks layout dirty.
      *
-     * @zh
-     * 子节点之间的水平间距。
+     * @zh 水平相邻子节点的间距。
+     * 在 `CONTAINER` 模式影响容器宽度，在 `CHILDREN` 模式影响子节点分配宽度。
+     * 副作用：标记布局为脏。
      */
     @tooltip('i18n:layout.space_x')
     get spacingX (): number {
@@ -452,17 +470,18 @@ export class Layout extends Component {
         if (this._spacingX === value) {
             return;
         }
-
         this._spacingX = value;
         this._doLayoutDirty();
     }
 
     /**
-     * @en
-     * The distance in y-axis between each element in layout.
+     * @en Vertical spacing between adjacent children.
+     * Affects container height in `CONTAINER` mode and child height in `CHILDREN` mode.
+     * Side effects: marks layout dirty.
      *
-     * @zh
-     * 子节点之间的垂直间距。
+     * @zh 垂直相邻子节点的间距。
+     * 在 `CONTAINER` 模式影响容器高度，在 `CHILDREN` 模式影响子节点分配高度。
+     * 副作用：标记布局为脏。
      */
     @tooltip('i18n:layout.space_y')
     get spacingY (): number {
@@ -473,7 +492,6 @@ export class Layout extends Component {
         if (this._spacingY === value) {
             return;
         }
-
         this._spacingY = value;
         this._doLayoutDirty();
     }
@@ -544,10 +562,15 @@ export class Layout extends Component {
 
     /**
      * @en
-     * The layout constraint inside the container.
+     * Grid constraint type: `NONE`, `FIXED_ROW`, `FIXED_COL`.
+     * In `FIXED_ROW`, a fixed number of rows is kept; items wrap by columns.
+     * In `FIXED_COL`, a fixed number of columns is kept; items wrap by rows.
+     * Side effects: marks layout dirty.
      *
      * @zh
-     * 容器内布局约束。
+     * 网格约束类型：`NONE`、`FIXED_ROW`、`FIXED_COL`。
+     * `FIXED_ROW` 固定行数，按列换行；`FIXED_COL` 固定列数，按行换列。
+     * 副作用：标记布局为脏。
      */
     @type(LayoutConstraint)
     @visible(function (this: Layout): boolean {
@@ -613,33 +636,33 @@ export class Layout extends Component {
     }
 
     /**
-     * @en Layout type.
-     * @zh 布局类型。
+     * @en Enum alias for `LayoutType` for easier access in editor/JS.
+     * @zh `LayoutType` 的别名，方便在编辑器与脚本中访问。
      */
     public static Type = LayoutType;
     /**
-     * @en Vertical layout direction.
-     * @zh 垂直方向布局方式。
+     * @en Enum alias for `LayoutVerticalDirection`.
+     * @zh `LayoutVerticalDirection` 的别名。
      */
     public static VerticalDirection = LayoutVerticalDirection;
     /**
-     * @en Horizontal layout direction.
-     * @zh 水平方向布局方式。
+     * @en Enum alias for `LayoutHorizontalDirection`.
+     * @zh `LayoutHorizontalDirection` 的别名。
      */
     public static HorizontalDirection = LayoutHorizontalDirection;
     /**
-     * @en Layout Resize Mode.
-     * @zh 缩放模式。
+     * @en Enum alias for `LayoutResizeMode`.
+     * @zh `LayoutResizeMode` 的别名。
      */
     public static ResizeMode = LayoutResizeMode;
     /**
-     * @en Grid Layout start axis direction.
-     * @zh 布局轴向，只用于 GRID 布局。
+     * @en Enum alias for `LayoutAxisDirection` (GRID only).
+     * @zh `LayoutAxisDirection` 的别名（仅用于 GRID）。
      */
     public static AxisDirection = LayoutAxisDirection;
     /**
-     * @en Layout constraint.
-     * @zh 布局约束。
+     * @en Enum alias for `LayoutConstraint` (GRID only).
+     * @zh `LayoutConstraint` 的别名（仅用于 GRID）。
      */
     public static Constraint = LayoutConstraint;
 
@@ -684,20 +707,24 @@ export class Layout extends Component {
 
     /**
      * @en
-     * Perform the layout update.
+     * Perform layout update immediately.
+     * If `force=true`, updates even when the layout is not marked dirty.
+     * Typically called automatically after `DirectorEvent.AFTER_UPDATE`; call manually to sync positions right away.
      *
-     * @zh
-     * 立即执行更新布局。
-     * @param force @en force update or not. @zh 是否强制更新。
+     * @param force @en Whether to force update regardless of dirty flag. @zh 是否强制更新（忽略脏标记）。
      * @example
      * ```ts
-     * import { Layout, log } from 'cc';
+     * import { Layout } from 'cc';
      * layout.type = Layout.Type.HORIZONTAL;
-     * layout.node.addChild(childNode);
-     * log(childNode.x); // not yet changed
-     * layout.updateLayout();
-     * log(childNode.x); // changed
+     * layout.spacingX = 10;
+     * // ensure child positions updated within the same frame
+     * layout.updateLayout(true);
      * ```
+     *
+     * @zh
+     * 立即执行布局更新。
+     * 当 `force=true` 时，即便未标记为脏也会重新计算。
+     * 通常会在 `DirectorEvent.AFTER_UPDATE` 之后自动执行；如需当帧立即同步位置可手动调用。
      */
     public updateLayout (force = false): void {
         if (this._layoutDirty || force) {
